@@ -12,6 +12,7 @@ nfc = lambda s: unicodedata.normalize('NFC', s)  # 맥 파일 이름의 한글�
 
 
 def inline(s):
+    s = re.sub(r' *</?span\b[^>]*> *', '', s)  # Exporter가 남긴 서식 태그
     s = esc(s, quote=False)
     s = re.sub(r'!\[[^\]]*\]\(([^)]*)\)', lambda m: f'[사진: {os.path.basename(m[1])}]', s)
     s = re.sub(r'\[([^\]]+)\]\((?:attachments|images)/[^)]*\)', r'[첨부: \1]', s)
