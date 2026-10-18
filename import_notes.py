@@ -15,7 +15,7 @@ def inline(s):
     s = esc(s, quote=False)
     s = re.sub(r'!\[[^\]]*\]\(([^)]*)\)', lambda m: f'[사진: {os.path.basename(m[1])}]', s)
     s = re.sub(r'\[([^\]]+)\]\((?:attachments|images)/[^)]*\)', r'[첨부: \1]', s)
-    s = re.sub(r'\[([^\]]+)\]\((https?://[^)\s]+)\)', r'<a href="\2">\1</a>', s)
+    s = re.sub(r'\[([^\]]+)\]\(((?:https?|mailto|tel):[^)\s]+)\)', r'<a href="\2">\1</a>', s)
     return re.sub(r'\*\*(.+?)\*\*', r'<b>\1</b>', s)
 
 

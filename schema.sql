@@ -28,3 +28,8 @@ create policy own on folders for all using (user_id = auth.uid()) with check (us
 create policy own on notes   for all using (user_id = auth.uid()) with check (user_id = auth.uid());
 
 alter publication supabase_realtime add table folders, notes;
+
+-- 추가 (2026-10-19): 폴더 안 폴더, 폴더 순서, 메모 생성일
+alter table folders add column if not exists parent_id uuid;
+alter table folders add column if not exists position double precision;
+alter table notes add column if not exists created_at timestamptz not null default now();

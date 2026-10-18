@@ -3,84 +3,150 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#f6f5f2" media="(prefers-color-scheme: light)">
-<meta name="theme-color" content="#1c1c1e" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#f5f5f7" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#1e1e1e" media="(prefers-color-scheme: dark)">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon-192.png">
 <link rel="apple-touch-icon" href="icon-192.png">
 <title>메모</title>
 <style>
-:root{--bg:#fff;--side:#f6f5f2;--line:#e4e2dd;--text:#1d1d1f;--sub:#86868b;--acc:#e0a500;--sel:#fbe7a6;--hover:#efede8}
-@media (prefers-color-scheme:dark){:root{--bg:#1e1e1e;--side:#262626;--line:#3a3a3a;--text:#f2f2f2;--sub:#98989d;--acc:#f5c000;--sel:#5b4a12;--hover:#303030}}
+:root{--bg:#fff;--side:#f5f5f7;--line:#e5e5ea;--text:#1d1d1f;--sub:#8e8e93;--icon:#5e5e63;--acc:#e3a600;--sel:#fde98f;--rowsel:#e2e2e7;--hover:#ececf0;--field:#ececf0;--pop:#fff;--sw:260px;--lw:300px}
+@media (prefers-color-scheme:dark){:root{--bg:#1e1e1e;--side:#252527;--line:#38383a;--text:#f2f2f7;--sub:#8e8e93;--icon:#b0b0b5;--acc:#f5c400;--sel:#6e5a14;--rowsel:#3a3a3c;--hover:#333335;--field:#333335;--pop:#2c2c2e}}
 *{box-sizing:border-box}
-html,body{margin:0;height:100%;background:var(--bg);color:var(--text);font:15px/1.45 -apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Noto Sans KR",sans-serif}
-button{font:inherit;color:inherit;background:none;border:0;cursor:pointer;padding:6px 8px;border-radius:6px}
-button:hover{background:var(--hover)}
-.acc{color:var(--acc)}
-#app{display:grid;grid-template-columns:230px 290px 1fr;height:100%}
-.pane{display:flex;flex-direction:column;min-width:0;min-height:0;border-right:1px solid var(--line)}
-#folders{background:var(--side)}
-.head{display:flex;align-items:center;gap:4px;padding:10px 10px 6px;min-height:46px;padding-top:max(10px,env(safe-area-inset-top))}
-.head h2{font-size:17px;margin:0 0 0 4px;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.scroll{overflow-y:auto;flex:1}
-.f{display:flex;align-items:center;padding:7px 12px;margin:1px 6px;border-radius:7px;cursor:pointer}
-.f .nm{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.f .n{color:var(--sub);font-size:13px;margin-left:6px}
-.f .more{padding:0 6px;visibility:hidden}
-.f:hover .more,.f.on .more{visibility:visible}
-.f.on{background:var(--sel)}
-.tw{width:16px;flex:none!important;color:var(--sub);font-size:11px;text-align:center}
-#menu{position:fixed;z-index:9;background:var(--bg);border:1px solid var(--line);border-radius:10px;box-shadow:0 6px 24px #0003;display:flex;flex-direction:column;padding:4px;min-width:160px}
-#menu button{text-align:left;padding:9px 12px}
-#menu .danger{color:#e5484d}
-.foot{padding:8px 10px;padding-bottom:max(8px,env(safe-area-inset-bottom));display:flex;justify-content:space-between}
-#q{margin:0 10px 8px;padding:7px 10px;border-radius:8px;border:0;background:var(--hover);color:var(--text);font:inherit;outline:0}
-.sec{font-size:12px;font-weight:600;color:var(--sub);padding:10px 16px 4px}
-.it{padding:9px 14px;margin:0 6px;border-radius:8px;cursor:pointer;border-bottom:1px solid var(--line)}
-.it.on{background:var(--sel);border-color:transparent}
-.it b{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.it small{display:block;color:var(--sub);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.it small i{font-style:normal;color:var(--text);margin-right:6px}
-#status{font-size:12px;color:var(--sub);padding:0 16px 6px;min-height:18px}
-#tools{display:flex;flex-wrap:wrap;gap:2px;padding:6px 10px;border-bottom:1px solid var(--line);align-items:center}
-#tools select{font:inherit;color:inherit;background:var(--hover);border:0;border-radius:6px;padding:5px;max-width:130px}
-#tools .sp{flex:1}
-#ed{flex:1;overflow-y:auto;padding:20px 28px 40vh;outline:0;font-size:16px;word-wrap:break-word}
-#ed:empty::before{content:"메모를 입력하세요";color:var(--sub)}
-#ed h1{font-size:26px;margin:0 0 8px}
-#ed h2{font-size:20px;margin:12px 0 6px}
-#ed ul.cl{list-style:none;padding-left:4px}
-#ed ul.cl li{position:relative;padding-left:28px;margin:3px 0}
-#ed ul.cl li::before{content:"";position:absolute;left:0;top:3px;width:18px;height:18px;border:1.5px solid var(--sub);border-radius:50%;cursor:pointer}
-#ed ul.cl li.done::before{background:var(--acc);border-color:var(--acc);content:"✓";color:#fff;font-size:12px;text-align:center;line-height:18px}
-#ed ul.cl li.done{color:var(--sub);text-decoration:line-through}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--text);font:14px/1.45 -apple-system,BlinkMacSystemFont,"SF Pro Text","Apple SD Gothic Neo","Noto Sans KR",sans-serif;-webkit-font-smoothing:antialiased}
+button{font:inherit;color:inherit;background:none;border:0;cursor:default;padding:0}
+svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round;flex:none}
+[hidden]{display:none!important}
+.ib{min-width:34px;height:30px;display:inline-grid;place-items:center;border-radius:7px;color:var(--icon);padding:0 6px}
+.ib:hover{background:var(--hover)}
+.ib:disabled{opacity:.35;background:none}
+.ib.on{color:var(--acc)}
+.sp{flex:1}
+
+#app{display:grid;grid-template-columns:var(--sw) var(--lw) 1fr;height:100vh;height:100dvh}
+@media (min-width:1024px){
+  body.nosb #app{grid-template-columns:var(--lw) 1fr}
+  body.nosb #folders{display:none}
+}
+.back{grid-auto-flow:column;gap:2px;color:var(--acc)!important;padding:0 8px 0 2px}
+.pane{position:relative;display:flex;flex-direction:column;min-width:0;min-height:0}
+#folders{background:var(--side);border-right:1px solid var(--line)}
+#list{border-right:1px solid var(--line)}
+.bar{height:52px;flex:none;display:flex;align-items:center;gap:2px;padding:0 10px;padding-top:env(safe-area-inset-top);box-sizing:content-box}
+.scroll{overflow-y:auto;flex:1;overscroll-behavior:contain}
+.rs{position:absolute;top:0;right:-4px;width:8px;height:100%;cursor:col-resize;z-index:5;touch-action:none}
+.big{font-size:30px;font-weight:700;margin:0 18px 8px}
+
+/* 사이드바 */
+.f{display:flex;align-items:center;gap:6px;height:34px;margin:1px 8px;padding-right:10px;border-radius:8px;user-select:none;-webkit-user-select:none}
+.f .chev{width:14px;flex:none;color:var(--sub);font-size:12px;text-align:center}
+.f svg{color:var(--icon)}
+.f .nm{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:14px}
+.f .n{color:var(--sub);font-size:13px;font-variant-numeric:tabular-nums}
+.f.on{background:var(--rowsel)}
+.f.on svg,.f.on .nm{color:var(--acc)}
+.f.drop-in{background:var(--sel)}
+.f.drop-before{box-shadow:inset 0 2px 0 var(--acc)}
+.f.drop-after{box-shadow:inset 0 -2px 0 var(--acc)}
+.slabel{font-size:12px;font-weight:600;color:var(--sub);padding:12px 18px 4px}
+.foot{display:flex;align-items:center;gap:8px;padding:8px 16px;padding-bottom:max(8px,env(safe-area-inset-bottom));font-size:12px;color:var(--sub)}
+.foot button{color:var(--sub)}
+
+/* 메모 목록 */
+.lhead{flex:1;min-width:0;padding-left:6px;line-height:1.25}
+.lhead b{display:block;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.lhead small{color:var(--sub);font-size:12px}
+.search{display:flex;align-items:center;gap:6px;background:var(--field);border-radius:8px;padding:0 9px;height:30px;color:var(--sub)}
+.search svg{width:16px;height:16px}
+.search input{border:0;background:none;outline:0;font:inherit;color:var(--text);width:100%;min-width:0}
+#lsearch{margin:0 14px 8px;height:36px}
+.grp{font-size:19px;font-weight:700;padding:20px 22px 6px}
+.pinhead{display:flex;justify-content:space-between;align-items:center;font-size:15px;font-weight:600;padding:12px 22px 6px;user-select:none}
+.pinhead span{color:var(--sub)}
+.it{margin:0 10px;padding:10px 14px;border-radius:9px;position:relative;user-select:none;-webkit-user-select:none}
+.it::after{content:"";position:absolute;left:14px;right:14px;bottom:0;height:1px;background:var(--line)}
+.it.on{background:var(--sel)}
+.it.on::after,.it:has(+.it.on)::after,.it:last-child::after,.it:has(+.grp)::after,.it:has(+.pinhead)::after{display:none}
+.it b{display:block;font-size:14.5px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.it .l2{font-size:13px;color:var(--sub);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px}
+.it .l2 i{font-style:normal;color:var(--text);opacity:.85;margin-right:7px}
+.it .l3{display:flex;align-items:center;gap:4px;font-size:12px;color:var(--sub);margin-top:2px}
+.it .l3 svg{width:13px;height:13px}
+mark{background:#ffd60a80;color:inherit;border-radius:2px}
+.none{color:var(--sub);text-align:center;padding:40px 0}
+
+/* 편집기 */
+#edbar{border-bottom:1px solid var(--line);gap:4px}
+#tools{display:flex;gap:2px}
+#edsearch{width:220px}
+#edwrap{flex:1;overflow-y:auto}
+#eddate{text-align:center;color:var(--sub);font-size:12px;padding:14px 0 2px}
+#ed{padding:6px 40px 45vh;outline:0;font-size:15.5px;line-height:1.55;word-wrap:break-word;caret-color:var(--acc)}
+#ed h1{font-size:27px;font-weight:700;line-height:1.25;margin:0 0 4px}
+#ed h2{font-size:21px;font-weight:700;margin:10px 0 2px}
+#ed h3{font-size:17px;font-weight:600;margin:8px 0 2px}
+#ed pre{font:14px/1.5 ui-monospace,Menlo,monospace;background:var(--field);padding:8px 10px;border-radius:6px;white-space:pre-wrap}
+#ed ul,#ed ol{padding-left:26px;margin:2px 0}
+#ed ul.cl{list-style:none;padding-left:2px}
+#ed ul.cl li{position:relative;padding-left:30px;margin:5px 0;min-height:22px}
+#ed ul.cl li::before{content:"";position:absolute;left:0;top:2px;width:19px;height:19px;border:1.5px solid #b4b4b9;border-radius:50%;box-sizing:border-box}
+#ed ul.cl li.done::before{background:var(--acc);border-color:var(--acc);content:"✓";color:#fff;font-size:12px;font-weight:700;text-align:center;line-height:17px}
+#ed ul.dash{list-style:none;padding-left:18px}
+#ed ul.dash>li::before{content:"–";position:absolute;margin-left:-16px}
 #ed table{border-collapse:collapse;margin:8px 0}
-#ed td{border:1px solid var(--line);padding:6px 10px;min-width:60px}
-#ed img{max-width:100%}
+#ed td{border:1px solid var(--line);padding:6px 10px;min-width:70px;vertical-align:top}
+#ed a{color:var(--acc)}
 #empty{flex:1;display:flex;align-items:center;justify-content:center;color:var(--sub)}
-.back{display:none}
+
+/* 팝업 메뉴 */
+#pop{position:fixed;z-index:20;background:var(--pop);border:1px solid var(--line);border-radius:10px;box-shadow:0 10px 32px #0004;padding:5px;min-width:200px;max-height:70vh;overflow-y:auto}
+#pop button{display:flex;gap:8px;width:100%;text-align:left;padding:6px 10px;border-radius:6px;font-size:13.5px;white-space:nowrap}
+#pop button:hover:not(:disabled){background:var(--acc);color:#000}
+#pop button:disabled{opacity:.4}
+#pop button .ck{width:12px;flex:none}
+#pop .danger{color:#e5484d}
+#pop hr{border:0;border-top:1px solid var(--line);margin:4px 6px}
+#pop .lbl{font-size:11.5px;color:var(--sub);padding:4px 10px 2px}
+
+/* 로그인 */
 #auth{max-width:320px;margin:15vh auto;padding:0 16px;display:flex;flex-direction:column;gap:10px;text-align:center}
 #auth input{padding:11px;border-radius:9px;border:1px solid var(--line);background:var(--bg);color:var(--text);font:inherit}
-#auth .main{background:var(--acc);color:#000;font-weight:600;padding:11px}
+#auth .main{background:var(--acc);color:#000;font-weight:600;padding:11px;border-radius:9px}
+#auth button{padding:8px;cursor:pointer}
 #authmsg{color:var(--sub);font-size:13px;min-height:1em}
-[hidden]{display:none!important}
-/* 폴드 안쪽 화면·태블릿: 목록 + 메모 두 칸, 폴더는 목록 자리에 번갈아 표시 */
-@media (min-width:600px) and (max-width:1023px){
-  #app{grid-template-columns:minmax(260px,38%) 1fr}
+
+.back,.narrow,#lsearch,.big{display:none}
+
+/* 폴드 안쪽 화면·태블릿: 목록 + 메모, 폴더는 목록 자리에 */
+@media (max-width:1023px){
+  #app{grid-template-columns:var(--lw) 1fr}
   #folders,#list{grid-column:1;grid-row:1}
   #editor{grid-column:2;grid-row:1}
   body[data-pane=folders] #list,body:not([data-pane=folders]) #folders{display:none}
-  #list .back{display:inline-block}
+  #list .back{display:inline-grid}
+  #sbtoggle,#sbshow,#folders .rs{display:none!important}
 }
-/* 폴드 바깥 화면·휴대폰: 한 화면씩 */
+/* 폴드 바깥 화면·휴대폰: 한 화면씩 (아이폰 메모처럼) */
 @media (max-width:599px){
-  #app{grid-template-columns:1fr}
-  .pane{display:none;border:0}
-  body[data-pane=folders] #folders,body[data-pane=list] #list,body[data-pane=editor] #editor{display:flex}
-  .back{display:inline-block}
-  #ed{padding:16px 18px 40vh}
-  .f,.it{padding-top:11px;padding-bottom:11px}
+  #app,body.nosb #app{grid-template-columns:1fr}
+  .pane{display:none!important;border:0}
+  body[data-pane=folders] #folders,body[data-pane=list] #list,body[data-pane=editor] #editor{display:flex!important}
+  .rs,#edsearch{display:none}
+  .back,.narrow{display:inline-grid}
+  .big{display:block}
+  .slabel{display:none}
+  #lsearch{display:flex}
+  #folders{background:var(--bg)}
+  .f{height:46px}
+  .f .nm{font-size:16px}
+  .it{padding:12px 14px}
+  .it b{font-size:16px}
+  .it .l2{font-size:14px}
+  #ed{padding:6px 20px 45vh;font-size:16.5px}
+  body[data-pane=editor] #tools{position:fixed;left:0;right:0;bottom:0;z-index:4;justify-content:space-around;background:var(--bg);border-top:1px solid var(--line);padding:6px 10px max(6px,env(safe-area-inset-bottom))}
+  #tools .ib{min-width:48px;height:40px}
+  .back{font-size:17px}
 }
 </style>
 </head>
@@ -94,45 +160,62 @@ button:hover{background:var(--hover)}
   <p id="authmsg"></p>
 </form>
 
-<div id="menu" hidden><button data-a="rename">이름 변경</button><button data-a="sub">하위 폴더 만들기</button><button data-a="del" class="danger">폴더 삭제</button></div>
+<div id="pop" hidden></div>
+<svg width="0" height="0" style="position:absolute">
+  <symbol id="i-folder" viewBox="0 0 24 24"><path d="M3 7.5A1.5 1.5 0 0 1 4.5 6h4.3l1.8 2h8.9A1.5 1.5 0 0 1 21 9.5v8A1.5 1.5 0 0 1 19.5 19h-15A1.5 1.5 0 0 1 3 17.5z"/><path d="M3 10h18"/></symbol>
+  <symbol id="i-all" viewBox="0 0 24 24"><path d="M4 8.5A1.5 1.5 0 0 1 5.5 7h13A1.5 1.5 0 0 1 20 8.5v9a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 17.5z"/><path d="M6 4.5h12"/></symbol>
+  <symbol id="i-trash" viewBox="0 0 24 24"><path d="M5 7h14M10 7V5h4v2M7 7l1 12h8l1-12"/></symbol>
+  <symbol id="i-newf" viewBox="0 0 24 24"><path d="M3 7.5A1.5 1.5 0 0 1 4.5 6h4.3l1.8 2h8.9A1.5 1.5 0 0 1 21 9.5v8A1.5 1.5 0 0 1 19.5 19h-15A1.5 1.5 0 0 1 3 17.5z"/><path d="M12 11v5M9.5 13.5h5"/></symbol>
+  <symbol id="i-side" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M9 5v14M5.5 8.5h1.5M5.5 11h1.5"/></symbol>
+  <symbol id="i-new" viewBox="0 0 24 24"><path d="M11 4H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-5"/><path d="M17.5 3.5a2.1 2.1 0 0 1 3 3L12 15l-4 1 1-4z"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><circle cx="6" cy="7" r="2.3"/><path d="m4.9 17 .9.9 1.7-2"/><circle cx="6" cy="17" r="2.3"/><path d="M11 7h9M11 17h9"/></symbol>
+  <symbol id="i-table" viewBox="0 0 24 24"><rect x="3.5" y="5" width="17" height="14" rx="2"/><path d="M3.5 10h17M3.5 14.5h17M9 5v14M15 5v14"/></symbol>
+  <symbol id="i-more" viewBox="0 0 24 24"><circle cx="5.5" cy="12" r="1.2" fill="currentColor"/><circle cx="12" cy="12" r="1.2" fill="currentColor"/><circle cx="18.5" cy="12" r="1.2" fill="currentColor"/></symbol>
+  <symbol id="i-search" viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6"/><path d="m15 15 5 5"/></symbol>
+  <symbol id="i-back" viewBox="0 0 24 24"><path d="m15 5-7 7 7 7"/></symbol>
+</svg>
+
 <div id="app" hidden>
   <section class="pane" id="folders">
-    <div class="head"><h2>폴더</h2></div>
+    <div class="bar">
+      <span class="sp"></span>
+      <button class="ib" id="newf" title="새 폴더 (⇧⌘N)"><svg><use href="#i-newf"/></svg></button>
+      <button class="ib" id="sbtoggle" title="사이드바 가리기"><svg><use href="#i-side"/></svg></button>
+    </div>
+    <h1 class="big">폴더</h1>
     <div class="scroll" id="flist"></div>
-    <div class="foot"><button id="newf" class="acc">＋ 새 폴더</button><button id="logout">로그아웃</button></div>
+    <div class="foot"><span id="status" class="sp"></span><button id="logout">로그아웃</button></div>
+    <div class="rs" data-v="--sw"></div>
   </section>
 
   <section class="pane" id="list">
-    <div class="head"><button class="back acc" data-go="folders">‹ 폴더</button><h2 id="ltitle"></h2><button id="newn" class="acc" title="새 메모 (⌘N)">✎</button></div>
-    <input id="q" type="search" placeholder="검색">
-    <div id="status"></div>
+    <div class="bar">
+      <button class="ib back" data-go="folders"><svg><use href="#i-back"/></svg><span>폴더</span></button>
+      <button class="ib" id="sbshow" title="사이드바 보기" hidden><svg><use href="#i-side"/></svg></button>
+      <div class="lhead"><b id="ltitle"></b><small id="lcount"></small></div>
+      <button class="ib" id="viewmenu" title="보기 옵션"><svg><use href="#i-more"/></svg></button>
+      <button class="ib narrow newn" title="새 메모"><svg><use href="#i-new"/></svg></button>
+    </div>
+    <label class="search" id="lsearch"><svg><use href="#i-search"/></svg><input class="q" type="search" placeholder="검색"></label>
     <div class="scroll" id="nlist"></div>
+    <div class="rs" data-v="--lw"></div>
   </section>
 
   <section class="pane" id="editor">
-    <div id="tools" hidden>
-      <button class="back acc" data-go="list">‹</button>
-      <span id="normal">
-        <button data-cmd="formatBlock" data-arg="H1" title="제목"><b>Aa</b></button>
-        <button data-cmd="bold" title="굵게"><b>B</b></button>
-        <button data-cmd="italic" title="기울임"><i>I</i></button>
-        <button data-cmd="underline" title="밑줄"><u>U</u></button>
-        <button data-cmd="strikeThrough" title="취소선"><s>S</s></button>
-        <button data-cmd="insertUnorderedList" title="목록">•</button>
-        <button data-cmd="insertOrderedList" title="번호 목록">1.</button>
-        <button id="check" title="체크리스트">☑︎</button>
-        <button id="table" title="표">▦</button>
-      </span>
+    <div class="bar" id="edbar">
+      <button class="ib back" data-go="list"><svg><use href="#i-back"/></svg><span id="backname"></span></button>
+      <div id="tools">
+        <button class="ib newn" title="새 메모 (⌘N)"><svg><use href="#i-new"/></svg></button>
+        <button class="ib nb" id="fmt" title="서식"><b style="font-size:15px">가<small>가</small></b></button>
+        <button class="ib nb" id="check" title="체크리스트 (⇧⌘L)"><svg><use href="#i-check"/></svg></button>
+        <button class="ib nb" id="table" title="표"><svg><use href="#i-table"/></svg></button>
+      </div>
       <span class="sp"></span>
-      <span id="normal2">
-        <select id="move" title="폴더 이동"></select>
-        <button id="pin" title="고정">📌</button>
-        <button id="del" title="삭제">🗑</button>
-      </span>
-      <span id="trash" hidden><button id="restore" class="acc">복구</button><button id="purge">영구 삭제</button></span>
+      <button class="ib nb" id="more" title="메모 메뉴"><svg><use href="#i-more"/></svg></button>
+      <label class="search" id="edsearch"><svg><use href="#i-search"/></svg><input class="q" type="search" placeholder="검색"></label>
     </div>
-    <div id="ed" contenteditable="true" spellcheck="false" hidden></div>
-    <div id="empty">메모를 선택하세요</div>
+    <div id="edwrap" hidden><div id="eddate"></div><div id="ed" contenteditable="true" spellcheck="false"></div></div>
+    <div id="empty">메모 없음</div>
   </section>
 </div>
 
@@ -140,13 +223,14 @@ button:hover{background:var(--hover)}
 <script src="config.js"></script>
 <script>
 const $ = s => document.querySelector(s);
+const $$ = s => [...document.querySelectorAll(s)];
 const ALL = 'all', TRASH = 'trash';
 const load = (k, d) => { try { return JSON.parse(localStorage.getItem(k)) ?? d } catch { return d } };
 const store = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); return true } catch { return false } };
-const esc = s => s.replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const now = () => new Date().toISOString();
 // 비활성 문서에서 파싱해 스크립트·이미지 로드 없이 글자만 뽑는다
-const plain = html => new DOMParser().parseFromString(html.replace(/<\/?(br|div|p|h[1-6]|li|tr)\b[^>]*>/gi, '\n$&'), 'text/html').body.textContent;
+const plain = html => new DOMParser().parseFromString(html.replace(/<\/?(br|div|p|h[1-6]|li|tr|pre)\b[^>]*>/gi, '\n$&'), 'text/html').body.textContent;
 const lines = html => plain(html).split('\n').map(s => s.trim()).filter(Boolean);
 const isEmpty = html => !lines(html).length && !/<(table|img)/i.test(html);
 // 메모 1000개를 글자 칠 때마다 다시 파싱하지 않도록, 내용이 바뀐 메모만 다시 뽑는다
@@ -156,26 +240,32 @@ const textOf = n => {
   if (!c || c.html !== n.html) textCache.set(n.id, c = { html: n.html, lines: lines(n.html) });
   return c.lines;
 };
+const titleOf = n => textOf(n)[0] || '새로운 메모';
 
 const cfg = window.MEMO_CFG || {};
 const db = cfg.url && supabase.createClient(cfg.url, cfg.key);
 
 let S = { folders: load('folders', []), notes: load('notes', []), view: load('view', ALL), open: null, q: '' };
+// 보기 설정 (기기마다): 정렬 기준·날짜 그룹·순서·패널 너비
+let P = Object.assign({ sort: 'updated', group: true, rev: false, pinOpen: true, nosb: false, sw: 260, lw: 300 }, load('prefs', {}));
+const savePrefs = () => store('prefs', P);
 // 서버에 아직 못 올린 변경: "table:id" → {table,row,del}. 저장 성공 전엔 절대 안 지운다
 let queue = load('queue', {});
 let channel, shown = {};
 
-// 오프라인용 사본이 저장공간(약 5MB)을 넘기면 사본을 버린다 — 저장 대기열(queue) 자리를 지키기 위해
-// ponytail: 메모가 수천 개로 늘면 IndexedDB로 옮길 것
-// 폴더 트리. 부모가 사라진 폴더는 맨 위로 올린다
+// 폴더 트리. 순서는 position(끌어서 바꾼 순서) → 이름. 부모가 사라진 폴더는 맨 위로
 let closed = new Set(load('closed', []));
 const byName = (a, b) => a.name.localeCompare(b.name, 'ko', { numeric: true });
-const parentOf = f => S.folders.some(p => p.id === f.parent_id) ? f.parent_id : null;
-const kids = id => S.folders.filter(f => parentOf(f) === id).sort(byName);
+const byOrder = (a, b) => (a.position ?? 1e9) - (b.position ?? 1e9) || byName(a, b);
+const parentOf = f => f.parent_id && S.folders.some(p => p.id === f.parent_id) ? f.parent_id : null;
+const kids = id => S.folders.filter(f => parentOf(f) === id).sort(byOrder);
 const tree = (id = null, depth = 0, all = false) =>
   kids(id).flatMap(f => [{ f, depth }, ...(all || !closed.has(f.id) ? tree(f.id, depth + 1, all) : [])]);
 const subtree = id => [id, ...kids(id).flatMap(k => subtree(k.id))];
+const folder = id => S.folders.find(f => f.id === id);
 
+// 오프라인용 사본이 저장공간(약 5MB)을 넘기면 사본을 버린다 — 저장 대기열(queue) 자리를 지키기 위해
+// ponytail: 메모가 수천 개로 늘면 IndexedDB로 옮길 것
 const cache = () => { store('folders', S.folders); if (!store('notes', S.notes)) localStorage.removeItem('notes'); };
 const note = id => S.notes.find(n => n.id === id);
 const status = t => $('#status').textContent = t;
@@ -263,69 +353,116 @@ function subscribe() {
     .subscribe(s => s === 'SUBSCRIBED' && pull()); // 재연결 때마다 놓친 변경을 다시 받는다
 }
 
+// ---------- 날짜 (애플 메모와 같은 표기) ----------
+const dateOf = n => P.sort === 'created' ? n.created_at || n.updated_at : n.updated_at;
+function groupOf(iso) {
+  const d = new Date(iso), t = new Date();
+  const days = Math.round((new Date(t).setHours(0, 0, 0, 0) - new Date(d).setHours(0, 0, 0, 0)) / 864e5);
+  if (days <= 0) return '오늘';
+  if (days === 1) return '어제';
+  if (days < 7) return '이전 7일';
+  if (days < 30) return '이전 30일';
+  return d.getFullYear() === t.getFullYear() ? `${d.getMonth() + 1}월` : `${d.getFullYear()}년`;
+}
+function when(iso) {
+  const d = new Date(iso), g = groupOf(iso);
+  if (g === '오늘') return d.toLocaleTimeString('ko-KR', { hour: 'numeric', minute: '2-digit' });
+  if (g === '어제') return '어제';
+  if (g === '이전 7일') return d.toLocaleDateString('ko-KR', { weekday: 'long' });
+  return `${d.getFullYear()}. ${d.getMonth() + 1}. ${d.getDate()}.`;
+}
+const longDate = iso => new Date(iso).toLocaleString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+
 // ---------- 화면 ----------
+const svg = id => `<svg><use href="#i-${id}"/></svg>`;
+// 마우스에서만 끌어서 놓기 (폰에선 길게 누르면 메뉴가 떠야 하므로)
+const DRAG = matchMedia('(pointer:fine)').matches ? 'draggable="true"' : '';
+
 function visible() {
-  const q = S.q.toLowerCase();
-  let ns = S.notes.filter(n => S.view === TRASH ? n.deleted_at : !n.deleted_at);
-  if (q) ns = ns.filter(n => textOf(n).join(' ').toLowerCase().includes(q));
+  const q = S.q.trim().toLowerCase();
+  let ns = S.notes.filter(n => S.view === TRASH && !q ? n.deleted_at : !n.deleted_at);
+  if (q) ns = ns.filter(n => textOf(n).join('\n').toLowerCase().includes(q)); // 검색은 모든 폴더에서
   else if (S.view !== ALL && S.view !== TRASH) ns = ns.filter(n => n.folder_id === S.view);
-  return ns.sort((a, b) => Date.parse(b.updated_at) - Date.parse(a.updated_at));
+  ns.sort(P.sort === 'title' ? (a, b) => titleOf(a).localeCompare(titleOf(b), 'ko', { numeric: true })
+                             : (a, b) => Date.parse(dateOf(b)) - Date.parse(dateOf(a)));
+  return P.rev ? ns.reverse() : ns;
 }
 
-function when(iso) {
-  const d = new Date(iso), t = new Date();
-  if (d.toDateString() === t.toDateString()) return d.toTimeString().slice(0, 5);
-  return `${d.getFullYear()}. ${d.getMonth() + 1}. ${d.getDate()}.`;
+function hl(s) {
+  const e = esc(s), q = S.q.trim();
+  if (!q) return e;
+  return e.replace(new RegExp(esc(q).replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi'), m => `<mark>${m}</mark>`);
+}
+
+function renderFolders(live) {
+  const count = new Map();
+  for (const n of live) count.set(n.folder_id, (count.get(n.folder_id) || 0) + 1);
+  const row = (id, name, n, depth, icon, real) => {
+    const chev = real && kids(id).length ? (closed.has(id) ? '›' : '⌄') : '';
+    return `<div class="f ${S.view === id && !S.q ? 'on' : ''}" data-f="${id}" ${real ? DRAG : ''} style="padding-left:${4 + depth * 18}px">` +
+      `<span class="chev" ${chev ? `data-tw="${id}"` : ''}>${chev}</span>${svg(icon)}<span class="nm">${esc(name)}</span><span class="n">${n || ''}</span></div>`;
+  };
+  $('#flist').innerHTML =
+    row(ALL, '모든 메모', live.length, 0, 'all') +
+    '<div class="slabel">폴더</div>' +
+    tree().map(({ f, depth }) => row(f.id, f.name, count.get(f.id), depth, 'folder', true)).join('') +
+    row(TRASH, '최근 삭제된 항목', S.notes.length - live.length, 0, 'trash');
+}
+
+function renderList() {
+  const ns = visible();
+  const searching = !!S.q.trim();
+  $('#ltitle').textContent = searching ? '검색 결과' : S.view === ALL ? '모든 메모' : S.view === TRASH ? '최근 삭제된 항목' : folder(S.view)?.name;
+  $('#lcount').textContent = `${ns.length}개의 메모`;
+  const showFolder = searching || S.view === ALL;
+  const q = S.q.trim().toLowerCase();
+  const item = n => {
+    const ls = textOf(n);
+    const p = (q && ls.slice(1).find(l => l.toLowerCase().includes(q))) || ls[1] || '추가 텍스트 없음';
+    const f = showFolder && folder(n.folder_id);
+    return `<div class="it ${n.id === S.open ? 'on' : ''}" data-n="${n.id}" ${DRAG}><b>${hl(titleOf(n))}</b>` +
+      `<div class="l2"><i>${when(dateOf(n))}</i>${hl(p)}</div>${f ? `<div class="l3">${svg('folder')}${esc(f.name)}</div>` : ''}</div>`;
+  };
+  const pinned = S.view === TRASH && !searching ? [] : ns.filter(n => n.pinned);
+  const rest = ns.filter(n => !pinned.includes(n));
+  let h = '';
+  if (pinned.length) h += `<div class="pinhead" data-pin>고정된 메모 <span>${P.pinOpen ? '⌄' : '›'}</span></div>` + (P.pinOpen ? pinned.map(item).join('') : '');
+  if (P.group && P.sort !== 'title') {
+    let last;
+    for (const n of rest) {
+      const g = groupOf(dateOf(n));
+      if (g !== last) { h += `<div class="grp">${g}</div>`; last = g; }
+      h += item(n);
+    }
+  } else h += (pinned.length && rest.length ? '<div class="grp">메모</div>' : '') + rest.map(item).join('');
+  $('#nlist').innerHTML = h || `<div class="none">${searching ? '결과 없음' : '메모 없음'}</div>`;
 }
 
 function render() {
   const live = S.notes.filter(n => !n.deleted_at);
-  if (S.view !== ALL && S.view !== TRASH && !S.folders.some(f => f.id === S.view)) S.view = ALL;
-  const row = (id, name, n, depth = 0, more = false) => {
-    const tw = more && kids(id).length ? `<span class="tw" data-tw="${id}">${closed.has(id) ? '▸' : '▾'}</span>` : '<span class="tw"></span>';
-    return `<div class="f ${S.view === id ? 'on' : ''}" data-f="${id}" style="padding-left:${6 + depth * 16}px">${tw}<span class="nm">${esc(name)}</span>${more ? `<button class="more" data-more="${id}">⋯</button>` : ''}<span class="n">${n}</span></div>`;
-  };
-  $('#flist').innerHTML =
-    row(ALL, '모든 메모', live.length) +
-    tree().map(({ f, depth }) => row(f.id, f.name, live.filter(n => n.folder_id === f.id).length, depth, true)).join('') +
-    row(TRASH, '최근 삭제된 항목', S.notes.length - live.length);
-
-  const title = S.q ? '검색 결과' : S.view === ALL ? '모든 메모' : S.view === TRASH ? '최근 삭제된 항목' : S.folders.find(f => f.id === S.view)?.name;
-  $('#ltitle').textContent = title;
-  $('#newn').hidden = S.view === TRASH;
-  const ns = visible();
-  const item = n => {
-    const [t = '새로운 메모', p = '추가 텍스트 없음'] = textOf(n);
-    return `<div class="it ${n.id === S.open ? 'on' : ''}" data-n="${n.id}"><b>${esc(t)}</b><small><i>${when(n.updated_at)}</i>${esc(p)}</small></div>`;
-  };
-  const pinned = ns.filter(n => n.pinned && S.view !== TRASH);
-  const rest = ns.filter(n => !pinned.includes(n));
-  $('#nlist').innerHTML = (pinned.length ? `<div class="sec">고정됨</div>${pinned.map(item).join('')}<div class="sec">메모</div>` : '') + rest.map(item).join('');
-
-  $('#move').innerHTML = `<option value="">폴더 없음</option>` + tree(null, 0, true).map(({ f, depth }) => `<option value="${f.id}">${'　'.repeat(depth)}${esc(f.name)}</option>`).join('');
+  if (S.view !== ALL && S.view !== TRASH && !folder(S.view)) S.view = ALL;
+  document.body.classList.toggle('nosb', P.nosb);
+  $('#sbshow').hidden = !P.nosb;
+  renderFolders(live);
+  renderList();
   showEditor();
-}
-
-function toolsFor(n) {
-  if (!n) return;
-  const trash = !!n.deleted_at;
-  $('#normal').hidden = $('#normal2').hidden = trash;
-  $('#trash').hidden = !trash;
-  $('#move').value = S.folders.some(f => f.id === n.folder_id) ? n.folder_id : '';
-  $('#pin').style.opacity = n.pinned ? 1 : .35;
-  $('#ed').contentEditable = !trash;
 }
 
 function showEditor() {
   const n = note(S.open);
-  $('#tools').hidden = $('#ed').hidden = !n;
+  $('#edwrap').hidden = !n;
   $('#empty').hidden = !!n;
+  $$('.nb').forEach(b => b.disabled = !n || !!n?.deleted_at);
+  $('#more').disabled = !n;
+  $$('.newn').forEach(b => b.disabled = S.view === TRASH);
+  $('#backname').textContent = S.q.trim() ? '검색' : S.view === ALL ? '모든 메모' : S.view === TRASH ? '최근 삭제' : folder(S.view)?.name || '';
   if (!n) return;
+  $('#eddate').textContent = longDate(n.updated_at);
+  $('#ed').contentEditable = !n.deleted_at;
   // 다른 기기에서 바뀐 내용 반영. 이 기기에서 치는 중(저장 대기)이면 안 덮는다
   // ponytail: 같은 메모를 두 기기에서 '동시에' 치면 나중 저장이 이김(글자 단위 병합 X). 필요하면 Yjs로
   // (브라우저마다 HTML 직렬화가 달라 innerHTML 대신 마지막으로 넣은 값과 비교 → 커서 튐 방지)
   if (shown.id !== n.id || (!queue['notes:' + n.id] && shown.html !== n.html)) { $('#ed').innerHTML = n.html; shown = { id: n.id, html: n.html }; }
-  toolsFor(n);
 }
 
 function leave() { // 빈 메모는 남기지 않는다 (애플 메모와 같음)
@@ -345,84 +482,152 @@ function openNote(id) {
   document.body.dataset.pane = 'editor';
 }
 
-function touch(n, fields) {
-  Object.assign(n, fields, { updated_at: now() });
+// bump=false: 고정·폴더 이동은 수정 날짜를 바꾸지 않는다 (애플 메모와 같음)
+function save(n, fields, bump = true) {
+  Object.assign(n, fields, bump ? { updated_at: now() } : {});
   put('notes', n);
 }
 
 function newNote() {
   if (S.view === TRASH) return;
-  S.q = $('#q').value = '';
-  const folder = S.view === ALL ? null : S.view;
-  const n = { id: crypto.randomUUID(), folder_id: folder, html: '', pinned: false, deleted_at: null, updated_at: now() };
+  setQ('');
+  const t = now();
+  const n = { id: crypto.randomUUID(), folder_id: S.view === ALL ? null : S.view, html: '<h1><br></h1>', pinned: false, deleted_at: null, updated_at: t, created_at: t };
   S.notes.push(n); // 글자를 치기 전엔 서버에 안 올린다
   openNote(n.id);
-  $('#ed').focus();
+  const ed = $('#ed');
+  ed.focus();
+  getSelection().collapse(ed.firstChild, 0); // 첫 줄은 제목
 }
 
-// ---------- 이벤트 ----------
-function newFolder(parent_id = null) {
-  const name = prompt('새 폴더 이름');
-  if (!name?.trim()) return;
-  const f = { id: crypto.randomUUID(), name: name.trim(), parent_id, updated_at: now() };
-  S.folders.push(f); put('folders', f);
-  if (parent_id) { closed.delete(parent_id); store('closed', [...closed]); }
-  S.view = f.id; render();
-  document.body.dataset.pane = 'list';
+function deleteNote(n) {
+  if (isEmpty(n.html)) dropNote(n); else save(n, { deleted_at: now() }, false);
+  if (S.open === n.id) { S.open = null; document.body.dataset.pane = 'list'; }
+  render();
 }
 
-const menu = $('#menu');
-let menuFolder;
-$('#flist').onclick = e => {
-  const tw = e.target.closest('[data-tw]');
-  if (tw) { // ▸ 접기/펴기
-    closed.has(tw.dataset.tw) ? closed.delete(tw.dataset.tw) : closed.add(tw.dataset.tw);
-    store('closed', [...closed]);
-    return render();
-  }
-  const more = e.target.closest('[data-more]');
-  if (more) {
-    menuFolder = S.folders.find(x => x.id === more.dataset.more);
-    const r = more.getBoundingClientRect();
-    menu.style.top = r.bottom + 'px';
-    menu.style.left = Math.min(r.left, innerWidth - 170) + 'px';
-    menu.hidden = false;
-    return e.stopPropagation();
-  }
-  const row = e.target.closest('[data-f]');
-  if (!row) return;
-  S.view = row.dataset.f; store('view', S.view);
-  S.q = $('#q').value = '';
-  render();
-  document.body.dataset.pane = 'list';
-};
-$('#newf').onclick = () => newFolder();
-document.addEventListener('click', () => menu.hidden = true);
-menu.onclick = e => {
-  const f = menuFolder, a = e.target.dataset.a;
-  menu.hidden = true;
-  if (a === 'sub') return newFolder(f.id);
-  if (a === 'rename') {
-    const name = prompt('폴더 이름', f.name);
-    if (name?.trim()) { f.name = name.trim(); f.updated_at = now(); put('folders', f); }
-  }
-  if (a === 'del') {
-    const ids = subtree(f.id);
-    if (!confirm(`'${f.name}' 폴더${ids.length > 1 ? `와 하위 폴더 ${ids.length - 1}개` : ''}, 안의 메모를 삭제할까요? 메모는 '최근 삭제된 항목'으로 갑니다.`)) return;
-    for (const n of S.notes.filter(n => ids.includes(n.folder_id) && !n.deleted_at)) touch(n, { deleted_at: now() });
-    for (const x of S.folders.filter(x => ids.includes(x.id))) put('folders', x, true);
-    S.folders = S.folders.filter(x => !ids.includes(x.id));
-  }
-  render();
-};
-$('#nlist').onclick = e => { const it = e.target.closest('[data-n]'); if (it) openNote(it.dataset.n); };
-$('#newn').onclick = newNote;
-$('#q').oninput = e => { S.q = e.target.value; render(); };
-document.querySelectorAll('[data-go]').forEach(b => b.onclick = () => { if (b.dataset.go === 'list') { leave(); S.open = null; render(); } document.body.dataset.pane = b.dataset.go; });
-document.addEventListener('keydown', e => { if ((e.metaKey || e.ctrlKey) && e.key === 'n') { e.preventDefault(); newNote(); } });
+function setQ(v) {
+  S.q = v;
+  $$('.q').forEach(i => i.value !== v && (i.value = v));
+}
 
+// ---------- 팝업 메뉴 ----------
+const pop = $('#pop');
+function menu(items, x, y) {
+  pop.innerHTML = items.map((it, i) => it === '-' ? '<hr>' : it.label === undefined ? `<div class="lbl">${esc(it.title)}</div>` :
+    `<button data-i="${i}" class="${it.danger ? 'danger' : ''}" ${it.disabled ? 'disabled' : ''}><span class="ck">${it.check ? '✓' : ''}</span>${it.html || esc(it.label)}</button>`).join('');
+  pop.hidden = false;
+  const r = pop.getBoundingClientRect();
+  pop.style.left = Math.max(6, Math.min(x, innerWidth - r.width - 6)) + 'px';
+  pop.style.top = Math.max(6, Math.min(y, innerHeight - r.height - 6)) + 'px';
+  pop.onclick = e => {
+    const b = e.target.closest('[data-i]');
+    if (!b) return;
+    e.stopPropagation();
+    pop.hidden = true;
+    items[b.dataset.i].act();
+  };
+}
+pop.onmousedown = e => e.preventDefault(); // 편집기 선택 영역 유지
+document.addEventListener('mousedown', e => { if (!pop.contains(e.target)) pop.hidden = true; });
+document.addEventListener('keydown', e => e.key === 'Escape' && (pop.hidden = true));
+const below = el => { const r = el.getBoundingClientRect(); return [r.left, r.bottom + 4]; };
+
+function folderPicker(cur, onPick, exclude = []) {
+  return tree(null, 0, true).filter(({ f }) => !exclude.includes(f.id))
+    .map(({ f, depth }) => ({ label: f.name, html: `<span style="padding-left:${depth * 14}px">${esc(f.name)}</span>`, check: cur === f.id, act: () => onPick(f.id) }));
+}
+
+function noteMenu(n, x, y) {
+  if (n.deleted_at) return menu([
+    { label: '복구', act: () => { save(n, { deleted_at: null }, false); render(); } },
+    { label: '영구 삭제', danger: true, act: () => { if (confirm('영구 삭제하면 되돌릴 수 없어요.')) { dropNote(n); if (S.open === n.id) S.open = null; render(); } } },
+  ], x, y);
+  menu([
+    { label: n.pinned ? '메모 고정 해제' : '메모 고정', act: () => { save(n, { pinned: !n.pinned }, false); render(); } },
+    { label: '폴더로 이동…', act: () => menu([{ title: '이동할 폴더' }, ...folderPicker(n.folder_id, id => { save(n, { folder_id: id }, false); render(); })], x, y) },
+    '-',
+    { label: '삭제', danger: true, act: () => deleteNote(n) },
+  ], x, y);
+}
+
+function folderMenu(f, x, y) {
+  menu([
+    { label: '새로운 하위 폴더', act: () => newFolder(f.id) },
+    { label: '이름 변경', act: () => { const name = prompt('폴더 이름', f.name); if (name?.trim()) { f.name = name.trim(); f.updated_at = now(); put('folders', f); render(); } } },
+    { label: '폴더 이동…', act: () => menu([{ title: '어디로 옮길까요?' }, { label: '맨 위 단계로', act: () => { placeFolder(f, null, null); render(); } }, '-',
+        ...folderPicker(f.parent_id, id => { placeFolder(f, id, null); closed.delete(id); render(); }, subtree(f.id))], x, y) },
+    '-',
+    { label: '폴더 삭제', danger: true, act: () => deleteFolder(f) },
+  ], x, y);
+}
+
+function viewMenu(x, y) {
+  const set = (k, v) => () => { P[k] = v; savePrefs(); render(); };
+  const dateSort = P.sort !== 'title';
+  menu([
+    { title: '정렬 기준' },
+    { label: '편집일', check: P.sort === 'updated', act: set('sort', 'updated') },
+    { label: '생성일', check: P.sort === 'created', act: set('sort', 'created') },
+    { label: '제목', check: P.sort === 'title', act: set('sort', 'title') },
+    '-',
+    { label: dateSort ? '최신 순' : 'ㄱ → ㅎ', check: !P.rev, act: set('rev', false) },
+    { label: dateSort ? '오래된 순' : 'ㅎ → ㄱ', check: P.rev, act: set('rev', true) },
+    '-',
+    { label: '날짜별로 그룹화', check: P.group && dateSort, disabled: !dateSort, act: set('group', !P.group) },
+  ], x, y);
+}
+
+const FORMATS = [
+  { label: '제목', key: '⇧⌘T', act: () => block('H1') },
+  { label: '머리말', key: '⇧⌘H', act: () => block('H2') },
+  { label: '부제목', key: '⇧⌘J', act: () => block('H3') },
+  { label: '본문', key: '⇧⌘B', act: () => block('DIV') },
+  { label: '고정폭', key: '⇧⌘M', act: () => block('PRE') },
+  '-',
+  { label: '• 글머리 기호 목록', act: () => list('') },
+  { label: '– 대시 목록', act: () => list('dash') },
+  { label: '1. 번호 목록', act: () => { listCmd('insertOrderedList'); saveEditor(); } },
+  '-',
+  { label: '굵게', key: '⌘B', act: () => cmd('bold') },
+  { label: '기울임꼴', key: '⌘I', act: () => cmd('italic') },
+  { label: '밑줄', key: '⌘U', act: () => cmd('underline') },
+  { label: '취소선', act: () => cmd('strikeThrough') },
+].map(f => f === '-' ? f : { ...f, html: `<span class="sp">${esc(f.label)}</span><span style="opacity:.5">${f.key || ''}</span>` });
+
+// ---------- 편집 명령 ----------
 const ed = $('#ed');
-const saveEditor = () => { const n = note(S.open); if (n && n.html !== ed.innerHTML) { touch(n, { html: ed.innerHTML }); shown.html = n.html; render(); } };
+const saveEditor = () => { const n = note(S.open); if (n && n.html !== ed.innerHTML) { save(n, { html: ed.innerHTML }); shown.html = n.html; render(); } };
+const cmd = (c, v) => { document.execCommand(c, false, v); saveEditor(); };
+const block = tag => cmd('formatBlock', tag);
+const curList = () => getSelection().anchorNode?.parentElement?.closest('#ed ul');
+// 크롬의 목록 명령은 커서를 줄 맨 앞으로 보내서, 줄 안의 글자 위치를 기억했다가 되돌린다
+const lineOf = () => { const a = getSelection().anchorNode; return (a?.nodeType === 3 ? a.parentElement : a)?.closest('li,div:not(#ed),h1,h2,h3,pre'); };
+function keepCaret(fn) {
+  const s = getSelection(), line = lineOf();
+  let off = 0;
+  if (line && s.rangeCount && s.isCollapsed) { const r = document.createRange(); r.setStart(line, 0); r.setEnd(s.anchorNode, s.anchorOffset); off = r.toString().length; }
+  fn();
+  const now = lineOf();
+  if (!line || !now || !s.isCollapsed) return;
+  const w = document.createTreeWalker(now, NodeFilter.SHOW_TEXT);
+  for (let t; (t = w.nextNode());) { if (off <= t.length) return s.collapse(t, off); off -= t.length; }
+}
+const listCmd = c => keepCaret(() => document.execCommand(c));
+function list(cls) { // 글머리/대시/체크리스트 전환 (애플 메모처럼 같은 걸 다시 누르면 해제)
+  let ul = curList();
+  if (ul && (ul.className || '') === cls) { listCmd('insertUnorderedList'); return saveEditor(); }
+  if (!ul) { listCmd('insertUnorderedList'); ul = curList(); }
+  if (ul) ul.className = cls;
+  saveEditor();
+}
+function toggleCheck() {
+  const sel = getSelection();
+  const lis = $$('#ed ul.cl li').filter(li => sel.containsNode(li, true));
+  if (lis.length && curList()?.classList.contains('cl')) { lis.forEach(li => li.classList.toggle('done')); return saveEditor(); }
+  list('cl');
+}
+
 ed.oninput = saveEditor;
 ed.onpaste = e => { // 사진은 아직 미지원: 붙여넣으면 메모가 수 MB로 불어나 동기화가 느려진다
   if ([...e.clipboardData.items].some(i => i.kind === 'file')) { e.preventDefault(); alert('사진 붙여넣기는 아직 지원하지 않아요.'); }
@@ -431,35 +636,168 @@ ed.onclick = e => { // 체크리스트 동그라미 누르면 완료 표시
   const li = e.target;
   if (li.tagName === 'LI' && li.parentElement.classList.contains('cl') && e.offsetX < 26 && ed.isContentEditable) { li.classList.toggle('done'); saveEditor(); }
 };
-document.querySelectorAll('[data-cmd]').forEach(b => {
-  b.onmousedown = e => e.preventDefault(); // 편집기 선택 영역 유지
-  b.onclick = () => { document.execCommand(b.dataset.cmd, false, b.dataset.arg); saveEditor(); };
-});
-$('#check').onmousedown = $('#table').onmousedown = e => e.preventDefault();
-$('#check').onclick = () => {
-  const inList = () => getSelection().anchorNode?.parentElement?.closest('#ed ul');
-  if (!inList()) document.execCommand('insertUnorderedList');
-  inList()?.classList.toggle('cl');
-  saveEditor();
+
+// ---------- 폴더 ----------
+function newFolder(parent_id = null) {
+  const name = prompt('새로운 폴더 이름');
+  if (!name?.trim()) return;
+  const f = { id: crypto.randomUUID(), name: name.trim(), parent_id, position: null, updated_at: now() };
+  S.folders.push(f);
+  placeFolder(f, parent_id, null);
+  if (parent_id) { closed.delete(parent_id); store('closed', [...closed]); }
+  S.view = f.id; setQ('');
+  render();
+  document.body.dataset.pane = 'list';
+}
+
+// 형제 폴더들 사이에 끼워 넣고 순서 번호를 다시 매긴다
+function placeFolder(f, parent, beforeId) {
+  const sib = kids(parent).filter(x => x !== f);
+  let i = beforeId ? sib.findIndex(x => x.id === beforeId) : -1;
+  if (i < 0) i = sib.length;
+  sib.splice(i, 0, f);
+  f.parent_id = parent;
+  sib.forEach((x, k) => { if (x.position !== k || x === f) { x.position = k; x.updated_at = now(); put('folders', x); } });
+}
+
+function deleteFolder(f) {
+  const ids = subtree(f.id);
+  if (!confirm(`'${f.name}' 폴더${ids.length > 1 ? `와 하위 폴더 ${ids.length - 1}개` : ''}를 삭제할까요? 안의 메모는 '최근 삭제된 항목'으로 갑니다.`)) return;
+  for (const n of S.notes.filter(n => ids.includes(n.folder_id) && !n.deleted_at)) save(n, { deleted_at: now() }, false);
+  for (const x of S.folders.filter(x => ids.includes(x.id))) put('folders', x, true);
+  S.folders = S.folders.filter(x => !ids.includes(x.id));
+  render();
+}
+
+// ---------- 이벤트 ----------
+$('#flist').onclick = e => {
+  const tw = e.target.closest('[data-tw]');
+  if (tw) { // ⌄ › 접기/펴기
+    closed.has(tw.dataset.tw) ? closed.delete(tw.dataset.tw) : closed.add(tw.dataset.tw);
+    store('closed', [...closed]);
+    return render();
+  }
+  const row = e.target.closest('[data-f]');
+  if (!row) return;
+  S.view = row.dataset.f; store('view', S.view);
+  setQ('');
+  render();
+  $('#nlist').scrollTop = 0;
+  document.body.dataset.pane = 'list';
 };
+$('#flist').oncontextmenu = e => { // 오른쪽 클릭 / 폰에선 길게 누르기
+  const f = folder(e.target.closest('[data-f]')?.dataset.f);
+  e.preventDefault();
+  f ? folderMenu(f, e.clientX, e.clientY) : menu([{ label: '새로운 폴더', act: () => newFolder() }], e.clientX, e.clientY);
+};
+$('#nlist').onclick = e => {
+  if (e.target.closest('[data-pin]')) { P.pinOpen = !P.pinOpen; savePrefs(); return render(); }
+  const it = e.target.closest('[data-n]');
+  if (it) openNote(it.dataset.n);
+};
+$('#nlist').oncontextmenu = e => {
+  const n = note(e.target.closest('[data-n]')?.dataset.n);
+  if (!n) return;
+  e.preventDefault();
+  noteMenu(n, e.clientX, e.clientY);
+};
+$('#newf').onclick = () => newFolder();
+$('#sbtoggle').onclick = () => { P.nosb = true; savePrefs(); render(); };
+$('#sbshow').onclick = () => { P.nosb = false; savePrefs(); render(); };
+$('#viewmenu').onclick = e => viewMenu(...below(e.currentTarget));
+$('#more').onclick = e => note(S.open) && noteMenu(note(S.open), ...below(e.currentTarget));
+$('#fmt').onmousedown = $('#check').onmousedown = $('#table').onmousedown = e => e.preventDefault();
+$('#fmt').onclick = e => menu(FORMATS, ...below(e.currentTarget));
+$('#check').onclick = toggleCheck;
 $('#table').onclick = () => {
   const r = '<tr>' + '<td><br></td>'.repeat(3) + '</tr>';
-  document.execCommand('insertHTML', false, `<table>${r.repeat(3)}</table><div><br></div>`);
-  saveEditor();
+  cmd('insertHTML', `<table>${r.repeat(3)}</table><div><br></div>`);
 };
-$('#move').onchange = e => { touch(note(S.open), { folder_id: e.target.value || null }); render(); };
-$('#pin').onclick = () => { const n = note(S.open); touch(n, { pinned: !n.pinned }); render(); };
-$('#del').onclick = () => { const n = note(S.open); if (isEmpty(n.html)) dropNote(n); else touch(n, { deleted_at: now() }); S.open = null; render(); document.body.dataset.pane = 'list'; };
-$('#restore').onclick = () => { touch(note(S.open), { deleted_at: null }); render(); };
-$('#purge').onclick = () => { if (confirm('영구 삭제하면 되돌릴 수 없어요.')) { dropNote(note(S.open)); S.open = null; render(); document.body.dataset.pane = 'list'; } };
+$$('.newn').forEach(b => b.onclick = newNote);
+$$('.q').forEach(i => i.oninput = () => { setQ(i.value); renderList(); renderFolders(S.notes.filter(n => !n.deleted_at)); });
+$$('[data-go]').forEach(b => b.onclick = () => {
+  if (b.dataset.go === 'list') { leave(); S.open = null; render(); }
+  document.body.dataset.pane = b.dataset.go;
+});
+document.addEventListener('keydown', e => {
+  const m = e.metaKey || e.ctrlKey;
+  if (!m) return;
+  const k = e.key.toLowerCase();
+  if (k === 'n' && e.shiftKey) { e.preventDefault(); return newFolder(); }
+  if (k === 'n') { e.preventDefault(); return newNote(); }
+  if (k === 'f' && e.altKey) { e.preventDefault(); return $$('.q').find(i => i.offsetParent)?.focus(); }
+  if (!e.shiftKey || !ed.contains(document.activeElement) && document.activeElement !== ed) return;
+  const map = { t: 'H1', h: 'H2', j: 'H3', b: 'DIV', m: 'PRE' };
+  if (map[k]) { e.preventDefault(); block(map[k]); }
+  if (k === 'l') { e.preventDefault(); toggleCheck(); }
+});
+
+// 끌어서 놓기: 메모 → 폴더(이동) / 최근 삭제(삭제), 폴더 → 폴더 위·아래(순서) 또는 가운데(안으로)
+let drag = null;
+document.addEventListener('dragstart', e => {
+  const n = e.target.closest?.('[data-n]'), f = e.target.closest?.('[data-f]');
+  drag = n ? { type: 'note', id: n.dataset.n } : f ? { type: 'folder', id: f.dataset.f } : null;
+  if (drag) { e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', drag.id); }
+});
+document.addEventListener('dragend', () => { drag = null; clearDrop(); });
+const clearDrop = () => $$('.drop-in,.drop-before,.drop-after').forEach(x => x.classList.remove('drop-in', 'drop-before', 'drop-after'));
+function dropZone(e) {
+  const row = e.target.closest('[data-f]');
+  if (!drag || !row) return null;
+  const id = row.dataset.f;
+  if (drag.type === 'note') return id === ALL ? null : { row, id, zone: 'in' };
+  if (id === ALL || id === TRASH || subtree(drag.id).includes(id)) return null;
+  const r = row.getBoundingClientRect(), y = (e.clientY - r.top) / r.height;
+  return { row, id, zone: y < .28 ? 'before' : y > .72 ? 'after' : 'in' };
+}
+$('#flist').ondragover = e => {
+  const z = dropZone(e);
+  clearDrop();
+  if (!z) return;
+  e.preventDefault();
+  z.row.classList.add('drop-' + z.zone);
+};
+$('#flist').ondrop = e => {
+  const z = dropZone(e);
+  clearDrop();
+  if (!z) return;
+  e.preventDefault();
+  if (drag.type === 'note') {
+    const n = note(drag.id);
+    if (z.id === TRASH) deleteNote(n); else { save(n, { folder_id: z.id }, false); render(); }
+    return;
+  }
+  const f = folder(drag.id), t = folder(z.id);
+  if (z.zone === 'in') { placeFolder(f, t.id, null); closed.delete(t.id); store('closed', [...closed]); }
+  else {
+    const sib = kids(parentOf(t)).filter(x => x !== f);
+    const next = z.zone === 'before' ? t : sib[sib.indexOf(t) + 1];
+    placeFolder(f, parentOf(t), next?.id || null);
+  }
+  render();
+};
+
+// 패널 너비 조절 (가운데 선을 끌기)
+function applyWidths() {
+  document.body.style.setProperty('--sw', P.sw + 'px');
+  document.body.style.setProperty('--lw', P.lw + 'px');
+}
+$$('.rs').forEach(h => h.onpointerdown = e => {
+  const k = h.dataset.v === '--sw' ? 'sw' : 'lw', x0 = e.clientX, w0 = P[k];
+  const [lo, hi] = k === 'sw' ? [180, 420] : [220, 560];
+  h.setPointerCapture(e.pointerId);
+  h.onpointermove = m => { P[k] = Math.max(lo, Math.min(hi, w0 + m.clientX - x0)); applyWidths(); };
+  h.onpointerup = () => { h.onpointermove = null; savePrefs(); };
+});
 
 addEventListener('online', pull);
 document.addEventListener('visibilitychange', () => document.visibilityState === 'visible' && db && pull());
 
 // ---------- 로그인 ----------
-async function start() {
+function start() {
   $('#auth').hidden = true;
   $('#app').hidden = false;
+  applyWidths();
   render();
   subscribe();
 }
