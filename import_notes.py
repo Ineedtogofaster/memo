@@ -1,13 +1,14 @@
 """애플 메모 내보내기 폴더(Exporter, 마크다운) → 메모 앱 Supabase SQL.
 
-python3 import_notes.py <내보낸 폴더> <사용자 uid>  → batch_*.sql 생성
+python3 import_notes.py <내보낸 폴더> <사용자 uid> [folders-only]  → batch_*.sql 생성
 같은 메모는 항상 같은 id(경로 기반)라 여러 번 돌려도 중복 없이 덮어쓴다.
 """
-import html, os, re, sys, uuid
+import html, os, re, sys, unicodedata, uuid
 from datetime import datetime, timezone
 
 NS = uuid.UUID('6f1c1f0e-8a39-4c7e-9a52-6d0d3c1e2b7a')
 esc = html.escape
+nfc = lambda s: unicodedata.normalize('NFC', s)  # 맥 파일 이름의 한글은 자모가 분리돼(NFD) 있어 검색이 안 됨
 
 
 def inline(s):
@@ -47,6 +48,12 @@ def md_to_html(md):
                 i += 1
             out.append('<table>' + ''.join(rows) + '</table>')
             continue
+        # Exporter가 붙인 제목 줄 + 애플 메모 원래 첫 줄이 같으면 한 번만
+        if len(out) >= 1 and out[0].startswith('<h1>') and all(x == '<div><br></div>' for x in out[1:]) \
+                and ln.lstrip('#').strip() and inline(ln.lstrip('#').strip()) == out[0][4:-5]:
+            del out[1:]
+            i += 1
+            continue
         h = re.match(r'(#{1,6}) (.*)', ln)
         if h and (not out or len(h[1]) > 1):  # 첫 줄 # 제목 → h1, 본문 ## → h2
             tag = 'h1' if not out else 'h2'
@@ -71,23 +78,25 @@ def main(root, uid):
         rel = os.path.relpath(d, root)
         trash = rel.split(os.sep)[0] == 'Recently Deleted'
         name = None if rel == '.' or trash else ('메모' if rel == 'Notes' else rel)
+        if name:  # 빈 폴더도, 하위 폴더도 그대로 만든다 (id는 경로 기반)
+            folders[name] = str(uuid.uuid5(NS, 'folder:' + name))
         for f in sorted(files):
             if not f.endswith('.md'):
                 continue
             p = os.path.join(d, f)
-            if name and name not in folders:
-                folders[name] = str(uuid.uuid5(NS, 'folder:' + name))
-            body = md_to_html(open(p, encoding='utf-8').read())
+            body = md_to_html(nfc(open(p, encoding='utf-8').read()))
             if not body.startswith('<h1>'):  # 제목 줄이 없던 메모는 파일 이름을 제목으로
-                body = f'<h1>{esc(f[:-3])}</h1>' + body
+                body = f'<h1>{esc(nfc(f[:-3]))}</h1>' + body
             mtime = datetime.fromtimestamp(os.path.getmtime(p), timezone.utc).isoformat()
             notes.append(dict(id=str(uuid.uuid5(NS, 'note:' + os.path.relpath(p, root))), folder_id=folders.get(name),
                               html=body, updated_at=mtime,
                               deleted_at=datetime.now(timezone.utc).isoformat() if trash else None))
 
-    stmts = [f"insert into folders (id,user_id,name) values ({sql(i)},{sql(uid)},{sql(n)}) on conflict (id) do update set name=excluded.name;"
+    stmts = [f"insert into folders (id,user_id,name,parent_id) values ({sql(i)},{sql(uid)},{sql(nfc(os.path.basename(n)))},"
+             f"{sql(folders.get(os.path.dirname(n)))}) on conflict (id) do update set name=excluded.name,parent_id=excluded.parent_id;"
              for n, i in folders.items()]
-    stmts += [f"insert into notes (id,user_id,folder_id,html,updated_at,deleted_at) values ({sql(n['id'])},{sql(uid)},{sql(n['folder_id'])},"
+    if sys.argv[3:4] != ['folders-only']:  # folders-only: 이미 넣은 메모는 건드리지 않고 폴더 구조만 고칠 때
+      stmts += [f"insert into notes (id,user_id,folder_id,html,updated_at,deleted_at) values ({sql(n['id'])},{sql(uid)},{sql(n['folder_id'])},"
               f"{sql(n['html'])},{sql(n['updated_at'])},{sql(n['deleted_at'])}) on conflict (id) do update set "
               f"folder_id=excluded.folder_id,html=excluded.html,updated_at=excluded.updated_at,deleted_at=excluded.deleted_at;"
               for n in notes]
@@ -102,6 +111,7 @@ if __name__ == '__main__':
         assert h.startswith('<h1>할 거</h1><div><br></div><ul class="cl"><li>유튜브</li><li class="done">대본</li></ul>'), h
         assert '<div><b>굵게</b> &lt;b&gt;</div>' in h and '<table><tr><td>a</td><td>b</td></tr><tr><td>1</td><td>2</td></tr></table>' in h, h
         assert h.endswith('<div>[사진: A.png]</div>'), h
+        assert md_to_html('# 비용\n\n# 비용\n\n내용') == '<h1>비용</h1><div><br></div><div>내용</div>', md_to_html('# 비용\n\n# 비용\n\n내용')
         print('ok')
     else:
         main(*sys.argv[1:3])

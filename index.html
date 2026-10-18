@@ -18,18 +18,22 @@ html,body{margin:0;height:100%;background:var(--bg);color:var(--text);font:15px/
 button{font:inherit;color:inherit;background:none;border:0;cursor:pointer;padding:6px 8px;border-radius:6px}
 button:hover{background:var(--hover)}
 .acc{color:var(--acc)}
-#app{display:grid;grid-template-columns:200px 290px 1fr;height:100%}
+#app{display:grid;grid-template-columns:230px 290px 1fr;height:100%}
 .pane{display:flex;flex-direction:column;min-width:0;min-height:0;border-right:1px solid var(--line)}
 #folders{background:var(--side)}
 .head{display:flex;align-items:center;gap:4px;padding:10px 10px 6px;min-height:46px;padding-top:max(10px,env(safe-area-inset-top))}
 .head h2{font-size:17px;margin:0 0 0 4px;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .scroll{overflow-y:auto;flex:1}
 .f{display:flex;align-items:center;padding:7px 12px;margin:1px 6px;border-radius:7px;cursor:pointer}
-.f span:first-child{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.f .nm{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .f .n{color:var(--sub);font-size:13px;margin-left:6px}
 .f .more{padding:0 6px;visibility:hidden}
 .f:hover .more,.f.on .more{visibility:visible}
 .f.on{background:var(--sel)}
+.tw{width:16px;flex:none!important;color:var(--sub);font-size:11px;text-align:center}
+#menu{position:fixed;z-index:9;background:var(--bg);border:1px solid var(--line);border-radius:10px;box-shadow:0 6px 24px #0003;display:flex;flex-direction:column;padding:4px;min-width:160px}
+#menu button{text-align:left;padding:9px 12px}
+#menu .danger{color:#e5484d}
 .foot{padding:8px 10px;padding-bottom:max(8px,env(safe-area-inset-bottom));display:flex;justify-content:space-between}
 #q{margin:0 10px 8px;padding:7px 10px;border-radius:8px;border:0;background:var(--hover);color:var(--text);font:inherit;outline:0}
 .sec{font-size:12px;font-weight:600;color:var(--sub);padding:10px 16px 4px}
@@ -61,7 +65,16 @@ button:hover{background:var(--hover)}
 #auth .main{background:var(--acc);color:#000;font-weight:600;padding:11px}
 #authmsg{color:var(--sub);font-size:13px;min-height:1em}
 [hidden]{display:none!important}
-@media (max-width:760px){
+/* 폴드 안쪽 화면·태블릿: 목록 + 메모 두 칸, 폴더는 목록 자리에 번갈아 표시 */
+@media (min-width:600px) and (max-width:1023px){
+  #app{grid-template-columns:minmax(260px,38%) 1fr}
+  #folders,#list{grid-column:1;grid-row:1}
+  #editor{grid-column:2;grid-row:1}
+  body[data-pane=folders] #list,body:not([data-pane=folders]) #folders{display:none}
+  #list .back{display:inline-block}
+}
+/* 폴드 바깥 화면·휴대폰: 한 화면씩 */
+@media (max-width:599px){
   #app{grid-template-columns:1fr}
   .pane{display:none;border:0}
   body[data-pane=folders] #folders,body[data-pane=list] #list,body[data-pane=editor] #editor{display:flex}
@@ -81,6 +94,7 @@ button:hover{background:var(--hover)}
   <p id="authmsg"></p>
 </form>
 
+<div id="menu" hidden><button data-a="rename">이름 변경</button><button data-a="sub">하위 폴더 만들기</button><button data-a="del" class="danger">폴더 삭제</button></div>
 <div id="app" hidden>
   <section class="pane" id="folders">
     <div class="head"><h2>폴더</h2></div>
@@ -153,6 +167,15 @@ let channel, shown = {};
 
 // 오프라인용 사본이 저장공간(약 5MB)을 넘기면 사본을 버린다 — 저장 대기열(queue) 자리를 지키기 위해
 // ponytail: 메모가 수천 개로 늘면 IndexedDB로 옮길 것
+// 폴더 트리. 부모가 사라진 폴더는 맨 위로 올린다
+let closed = new Set(load('closed', []));
+const byName = (a, b) => a.name.localeCompare(b.name, 'ko', { numeric: true });
+const parentOf = f => S.folders.some(p => p.id === f.parent_id) ? f.parent_id : null;
+const kids = id => S.folders.filter(f => parentOf(f) === id).sort(byName);
+const tree = (id = null, depth = 0, all = false) =>
+  kids(id).flatMap(f => [{ f, depth }, ...(all || !closed.has(f.id) ? tree(f.id, depth + 1, all) : [])]);
+const subtree = id => [id, ...kids(id).flatMap(k => subtree(k.id))];
+
 const cache = () => { store('folders', S.folders); if (!store('notes', S.notes)) localStorage.removeItem('notes'); };
 const note = id => S.notes.find(n => n.id === id);
 const status = t => $('#status').textContent = t;
@@ -257,12 +280,14 @@ function when(iso) {
 
 function render() {
   const live = S.notes.filter(n => !n.deleted_at);
-  const folders = [...S.folders].sort((a, b) => a.name.localeCompare(b.name, 'ko'));
   if (S.view !== ALL && S.view !== TRASH && !S.folders.some(f => f.id === S.view)) S.view = ALL;
-  const row = (id, name, n, more) => `<div class="f ${S.view === id ? 'on' : ''}" data-f="${id}"><span>${esc(name)}</span>${more ? `<button class="more" data-more="${id}">⋯</button>` : ''}<span class="n">${n}</span></div>`;
+  const row = (id, name, n, depth = 0, more = false) => {
+    const tw = more && kids(id).length ? `<span class="tw" data-tw="${id}">${closed.has(id) ? '▸' : '▾'}</span>` : '<span class="tw"></span>';
+    return `<div class="f ${S.view === id ? 'on' : ''}" data-f="${id}" style="padding-left:${6 + depth * 16}px">${tw}<span class="nm">${esc(name)}</span>${more ? `<button class="more" data-more="${id}">⋯</button>` : ''}<span class="n">${n}</span></div>`;
+  };
   $('#flist').innerHTML =
     row(ALL, '모든 메모', live.length) +
-    folders.map(f => row(f.id, f.name, live.filter(n => n.folder_id === f.id).length, true)).join('') +
+    tree().map(({ f, depth }) => row(f.id, f.name, live.filter(n => n.folder_id === f.id).length, depth, true)).join('') +
     row(TRASH, '최근 삭제된 항목', S.notes.length - live.length);
 
   const title = S.q ? '검색 결과' : S.view === ALL ? '모든 메모' : S.view === TRASH ? '최근 삭제된 항목' : S.folders.find(f => f.id === S.view)?.name;
@@ -277,7 +302,7 @@ function render() {
   const rest = ns.filter(n => !pinned.includes(n));
   $('#nlist').innerHTML = (pinned.length ? `<div class="sec">고정됨</div>${pinned.map(item).join('')}<div class="sec">메모</div>` : '') + rest.map(item).join('');
 
-  $('#move').innerHTML = `<option value="">폴더 없음</option>` + folders.map(f => `<option value="${f.id}">${esc(f.name)}</option>`).join('');
+  $('#move').innerHTML = `<option value="">폴더 없음</option>` + tree(null, 0, true).map(({ f, depth }) => `<option value="${f.id}">${'　'.repeat(depth)}${esc(f.name)}</option>`).join('');
   showEditor();
 }
 
@@ -336,19 +361,33 @@ function newNote() {
 }
 
 // ---------- 이벤트 ----------
+function newFolder(parent_id = null) {
+  const name = prompt('새 폴더 이름');
+  if (!name?.trim()) return;
+  const f = { id: crypto.randomUUID(), name: name.trim(), parent_id, updated_at: now() };
+  S.folders.push(f); put('folders', f);
+  if (parent_id) { closed.delete(parent_id); store('closed', [...closed]); }
+  S.view = f.id; render();
+  document.body.dataset.pane = 'list';
+}
+
+const menu = $('#menu');
+let menuFolder;
 $('#flist').onclick = e => {
+  const tw = e.target.closest('[data-tw]');
+  if (tw) { // ▸ 접기/펴기
+    closed.has(tw.dataset.tw) ? closed.delete(tw.dataset.tw) : closed.add(tw.dataset.tw);
+    store('closed', [...closed]);
+    return render();
+  }
   const more = e.target.closest('[data-more]');
   if (more) {
-    const f = S.folders.find(x => x.id === more.dataset.more);
-    const name = prompt('폴더 이름 (비우면 폴더 삭제)', f.name);
-    if (name === null) return;
-    if (name.trim()) { f.name = name.trim(); f.updated_at = now(); put('folders', f); }
-    else if (confirm(`'${f.name}' 폴더와 안의 메모를 삭제할까요? 메모는 '최근 삭제된 항목'으로 갑니다.`)) {
-      for (const n of S.notes.filter(n => n.folder_id === f.id && !n.deleted_at)) touch(n, { deleted_at: now() });
-      S.folders = S.folders.filter(x => x !== f);
-      put('folders', f, true);
-    }
-    return render();
+    menuFolder = S.folders.find(x => x.id === more.dataset.more);
+    const r = more.getBoundingClientRect();
+    menu.style.top = r.bottom + 'px';
+    menu.style.left = Math.min(r.left, innerWidth - 170) + 'px';
+    menu.hidden = false;
+    return e.stopPropagation();
   }
   const row = e.target.closest('[data-f]');
   if (!row) return;
@@ -357,13 +396,24 @@ $('#flist').onclick = e => {
   render();
   document.body.dataset.pane = 'list';
 };
-$('#newf').onclick = () => {
-  const name = prompt('새 폴더 이름');
-  if (!name?.trim()) return;
-  const f = { id: crypto.randomUUID(), name: name.trim(), updated_at: now() };
-  S.folders.push(f); put('folders', f);
-  S.view = f.id; render();
-  document.body.dataset.pane = 'list';
+$('#newf').onclick = () => newFolder();
+document.addEventListener('click', () => menu.hidden = true);
+menu.onclick = e => {
+  const f = menuFolder, a = e.target.dataset.a;
+  menu.hidden = true;
+  if (a === 'sub') return newFolder(f.id);
+  if (a === 'rename') {
+    const name = prompt('폴더 이름', f.name);
+    if (name?.trim()) { f.name = name.trim(); f.updated_at = now(); put('folders', f); }
+  }
+  if (a === 'del') {
+    const ids = subtree(f.id);
+    if (!confirm(`'${f.name}' 폴더${ids.length > 1 ? `와 하위 폴더 ${ids.length - 1}개` : ''}, 안의 메모를 삭제할까요? 메모는 '최근 삭제된 항목'으로 갑니다.`)) return;
+    for (const n of S.notes.filter(n => ids.includes(n.folder_id) && !n.deleted_at)) touch(n, { deleted_at: now() });
+    for (const x of S.folders.filter(x => ids.includes(x.id))) put('folders', x, true);
+    S.folders = S.folders.filter(x => !ids.includes(x.id));
+  }
+  render();
 };
 $('#nlist').onclick = e => { const it = e.target.closest('[data-n]'); if (it) openNote(it.dataset.n); };
 $('#newn').onclick = newNote;
