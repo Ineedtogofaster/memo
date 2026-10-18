@@ -1,0 +1,433 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#f6f5f2" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#1c1c1e" media="(prefers-color-scheme: dark)">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<title>메모</title>
+<style>
+:root{--bg:#fff;--side:#f6f5f2;--line:#e4e2dd;--text:#1d1d1f;--sub:#86868b;--acc:#e0a500;--sel:#fbe7a6;--hover:#efede8}
+@media (prefers-color-scheme:dark){:root{--bg:#1e1e1e;--side:#262626;--line:#3a3a3a;--text:#f2f2f2;--sub:#98989d;--acc:#f5c000;--sel:#5b4a12;--hover:#303030}}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--text);font:15px/1.45 -apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Noto Sans KR",sans-serif}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer;padding:6px 8px;border-radius:6px}
+button:hover{background:var(--hover)}
+.acc{color:var(--acc)}
+#app{display:grid;grid-template-columns:200px 290px 1fr;height:100%}
+.pane{display:flex;flex-direction:column;min-width:0;min-height:0;border-right:1px solid var(--line)}
+#folders{background:var(--side)}
+.head{display:flex;align-items:center;gap:4px;padding:10px 10px 6px;min-height:46px;padding-top:max(10px,env(safe-area-inset-top))}
+.head h2{font-size:17px;margin:0 0 0 4px;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.scroll{overflow-y:auto;flex:1}
+.f{display:flex;align-items:center;padding:7px 12px;margin:1px 6px;border-radius:7px;cursor:pointer}
+.f span:first-child{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.f .n{color:var(--sub);font-size:13px;margin-left:6px}
+.f .more{padding:0 6px;visibility:hidden}
+.f:hover .more,.f.on .more{visibility:visible}
+.f.on{background:var(--sel)}
+.foot{padding:8px 10px;padding-bottom:max(8px,env(safe-area-inset-bottom));display:flex;justify-content:space-between}
+#q{margin:0 10px 8px;padding:7px 10px;border-radius:8px;border:0;background:var(--hover);color:var(--text);font:inherit;outline:0}
+.sec{font-size:12px;font-weight:600;color:var(--sub);padding:10px 16px 4px}
+.it{padding:9px 14px;margin:0 6px;border-radius:8px;cursor:pointer;border-bottom:1px solid var(--line)}
+.it.on{background:var(--sel);border-color:transparent}
+.it b{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.it small{display:block;color:var(--sub);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.it small i{font-style:normal;color:var(--text);margin-right:6px}
+#status{font-size:12px;color:var(--sub);padding:0 16px 6px;min-height:18px}
+#tools{display:flex;flex-wrap:wrap;gap:2px;padding:6px 10px;border-bottom:1px solid var(--line);align-items:center}
+#tools select{font:inherit;color:inherit;background:var(--hover);border:0;border-radius:6px;padding:5px;max-width:130px}
+#tools .sp{flex:1}
+#ed{flex:1;overflow-y:auto;padding:20px 28px 40vh;outline:0;font-size:16px;word-wrap:break-word}
+#ed:empty::before{content:"메모를 입력하세요";color:var(--sub)}
+#ed h1{font-size:26px;margin:0 0 8px}
+#ed h2{font-size:20px;margin:12px 0 6px}
+#ed ul.cl{list-style:none;padding-left:4px}
+#ed ul.cl li{position:relative;padding-left:28px;margin:3px 0}
+#ed ul.cl li::before{content:"";position:absolute;left:0;top:3px;width:18px;height:18px;border:1.5px solid var(--sub);border-radius:50%;cursor:pointer}
+#ed ul.cl li.done::before{background:var(--acc);border-color:var(--acc);content:"✓";color:#fff;font-size:12px;text-align:center;line-height:18px}
+#ed ul.cl li.done{color:var(--sub);text-decoration:line-through}
+#ed table{border-collapse:collapse;margin:8px 0}
+#ed td{border:1px solid var(--line);padding:6px 10px;min-width:60px}
+#ed img{max-width:100%}
+#empty{flex:1;display:flex;align-items:center;justify-content:center;color:var(--sub)}
+.back{display:none}
+#auth{max-width:320px;margin:15vh auto;padding:0 16px;display:flex;flex-direction:column;gap:10px;text-align:center}
+#auth input{padding:11px;border-radius:9px;border:1px solid var(--line);background:var(--bg);color:var(--text);font:inherit}
+#auth .main{background:var(--acc);color:#000;font-weight:600;padding:11px}
+#authmsg{color:var(--sub);font-size:13px;min-height:1em}
+[hidden]{display:none!important}
+@media (max-width:760px){
+  #app{grid-template-columns:1fr}
+  .pane{display:none;border:0}
+  body[data-pane=folders] #folders,body[data-pane=list] #list,body[data-pane=editor] #editor{display:flex}
+  .back{display:inline-block}
+  #ed{padding:16px 18px 40vh}
+  .f,.it{padding-top:11px;padding-bottom:11px}
+}
+</style>
+</head>
+<body data-pane="list">
+<form id="auth" hidden>
+  <h1>메모</h1>
+  <input type="email" id="em" placeholder="이메일" autocomplete="username" required>
+  <input type="password" id="pw" placeholder="비밀번호 (6자 이상)" autocomplete="current-password" minlength="6" required>
+  <button class="main">로그인</button>
+  <button type="button" id="signup">새 계정 만들기</button>
+  <p id="authmsg"></p>
+</form>
+
+<div id="app" hidden>
+  <section class="pane" id="folders">
+    <div class="head"><h2>폴더</h2></div>
+    <div class="scroll" id="flist"></div>
+    <div class="foot"><button id="newf" class="acc">＋ 새 폴더</button><button id="logout">로그아웃</button></div>
+  </section>
+
+  <section class="pane" id="list">
+    <div class="head"><button class="back acc" data-go="folders">‹ 폴더</button><h2 id="ltitle"></h2><button id="newn" class="acc" title="새 메모 (⌘N)">✎</button></div>
+    <input id="q" type="search" placeholder="검색">
+    <div id="status"></div>
+    <div class="scroll" id="nlist"></div>
+  </section>
+
+  <section class="pane" id="editor">
+    <div id="tools" hidden>
+      <button class="back acc" data-go="list">‹</button>
+      <span id="normal">
+        <button data-cmd="formatBlock" data-arg="H1" title="제목"><b>Aa</b></button>
+        <button data-cmd="bold" title="굵게"><b>B</b></button>
+        <button data-cmd="italic" title="기울임"><i>I</i></button>
+        <button data-cmd="underline" title="밑줄"><u>U</u></button>
+        <button data-cmd="strikeThrough" title="취소선"><s>S</s></button>
+        <button data-cmd="insertUnorderedList" title="목록">•</button>
+        <button data-cmd="insertOrderedList" title="번호 목록">1.</button>
+        <button id="check" title="체크리스트">☑︎</button>
+        <button id="table" title="표">▦</button>
+      </span>
+      <span class="sp"></span>
+      <span id="normal2">
+        <select id="move" title="폴더 이동"></select>
+        <button id="pin" title="고정">📌</button>
+        <button id="del" title="삭제">🗑</button>
+      </span>
+      <span id="trash" hidden><button id="restore" class="acc">복구</button><button id="purge">영구 삭제</button></span>
+    </div>
+    <div id="ed" contenteditable="true" spellcheck="false" hidden></div>
+    <div id="empty">메모를 선택하세요</div>
+  </section>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script src="config.js"></script>
+<script>
+const $ = s => document.querySelector(s);
+const ALL = 'all', TRASH = 'trash';
+const load = (k, d) => { try { return JSON.parse(localStorage.getItem(k)) ?? d } catch { return d } };
+const store = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)) } catch {} }; // ponytail: 5MB 한도 넘으면 캐시만 포기, IndexedDB로 옮길 것
+const esc = s => s.replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const now = () => new Date().toISOString();
+// 비활성 문서에서 파싱해 스크립트·이미지 로드 없이 글자만 뽑는다
+const plain = html => new DOMParser().parseFromString(html.replace(/<\/?(br|div|p|h[1-6]|li|tr)\b[^>]*>/gi, '\n$&'), 'text/html').body.textContent;
+const lines = html => plain(html).split('\n').map(s => s.trim()).filter(Boolean);
+const isEmpty = html => !lines(html).length && !/<(table|img)/i.test(html);
+
+const cfg = window.MEMO_CFG || {};
+const db = cfg.url && supabase.createClient(cfg.url, cfg.key);
+
+let S = { folders: load('folders', []), notes: load('notes', []), view: load('view', ALL), open: null, q: '' };
+// 서버에 아직 못 올린 변경: "table:id" → {table,row,del}. 저장 성공 전엔 절대 안 지운다
+let queue = load('queue', {});
+let channel, shown = {};
+
+const cache = () => { store('folders', S.folders); store('notes', S.notes); };
+const note = id => S.notes.find(n => n.id === id);
+const status = t => $('#status').textContent = t;
+
+// ---------- 동기화 ----------
+function put(table, row, del = false) {
+  queue[table + ':' + row.id] = { table, row: del ? { id: row.id } : { ...row }, del };
+  store('queue', queue);
+  cache();
+  clearTimeout(put.t);
+  put.t = setTimeout(flush, 400);
+}
+
+let flushing = false;
+async function flush() {
+  if (flushing || !db) return;
+  flushing = true;
+  try {
+    for (const [k, op] of Object.entries(queue)) {
+      const t = db.from(op.table);
+      const { error } = op.del ? await t.delete().eq('id', op.row.id) : await t.upsert(op.row);
+      if (error) throw error;
+      if (queue[k] === op) delete queue[k]; // 그새 또 고쳤으면 새 버전은 남겨둔다
+      store('queue', queue);
+    }
+  } catch (e) {
+    console.warn(e);
+  } finally {
+    flushing = false;
+  }
+  const n = Object.keys(queue).length;
+  status(n ? `오프라인 · 저장 대기 ${n}개` : '');
+}
+setInterval(() => Object.keys(queue).length && flush(), 5000);
+
+async function selectAll(table) {
+  const out = [];
+  for (let from = 0; ; from += 1000) { // Supabase는 한 번에 1000행까지만 준다
+    const { data, error } = await db.from(table).select('*').range(from, from + 999);
+    if (error) throw error;
+    out.push(...data);
+    if (data.length < 1000) return out;
+  }
+}
+
+function merge(table, rows) {
+  const m = new Map(rows.map(r => [r.id, r]));
+  for (const op of Object.values(queue))
+    if (op.table === table) op.del ? m.delete(op.row.id) : m.set(op.row.id, op.row);
+  return [...m.values()];
+}
+
+async function pull() {
+  try {
+    const [n, f] = await Promise.all([selectAll('notes'), selectAll('folders')]);
+    S.notes = merge('notes', n);
+    S.folders = merge('folders', f);
+  } catch (e) {
+    return status('오프라인');
+  }
+  const old = Date.now() - 30 * 864e5; // 최근 삭제된 항목은 30일 뒤 비움
+  for (const x of S.notes.filter(x => x.deleted_at && Date.parse(x.deleted_at) < old)) dropNote(x);
+  cache();
+  render();
+  flush();
+}
+
+function onChange(table, p) {
+  const id = p.new?.id ?? p.old?.id;
+  if (queue[table + ':' + id]) return; // 이 기기에서 고친 게 아직 안 올라갔으면 내 것이 이긴다
+  const list = S[table];
+  const mine = list.find(x => x.id === id);
+  if (p.eventType !== 'DELETE' && mine && Date.parse(mine.updated_at) > Date.parse(p.new.updated_at)) return; // 늦게 도착한 옛 버전
+  S[table] = list.filter(x => x.id !== id);
+  if (p.eventType !== 'DELETE') S[table].push(p.new);
+  cache();
+  render();
+}
+
+function subscribe() {
+  if (channel) db.removeChannel(channel);
+  channel = db.channel('memo')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'notes' }, p => onChange('notes', p))
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'folders' }, p => onChange('folders', p))
+    .subscribe(s => s === 'SUBSCRIBED' && pull()); // 재연결 때마다 놓친 변경을 다시 받는다
+}
+
+// ---------- 화면 ----------
+function visible() {
+  const q = S.q.toLowerCase();
+  let ns = S.notes.filter(n => S.view === TRASH ? n.deleted_at : !n.deleted_at);
+  if (q) ns = ns.filter(n => plain(n.html).toLowerCase().includes(q));
+  else if (S.view !== ALL && S.view !== TRASH) ns = ns.filter(n => n.folder_id === S.view);
+  return ns.sort((a, b) => Date.parse(b.updated_at) - Date.parse(a.updated_at));
+}
+
+function when(iso) {
+  const d = new Date(iso), t = new Date();
+  if (d.toDateString() === t.toDateString()) return d.toTimeString().slice(0, 5);
+  return `${d.getFullYear()}. ${d.getMonth() + 1}. ${d.getDate()}.`;
+}
+
+function render() {
+  const live = S.notes.filter(n => !n.deleted_at);
+  const folders = [...S.folders].sort((a, b) => a.name.localeCompare(b.name, 'ko'));
+  if (S.view !== ALL && S.view !== TRASH && !S.folders.some(f => f.id === S.view)) S.view = ALL;
+  const row = (id, name, n, more) => `<div class="f ${S.view === id ? 'on' : ''}" data-f="${id}"><span>${esc(name)}</span>${more ? `<button class="more" data-more="${id}">⋯</button>` : ''}<span class="n">${n}</span></div>`;
+  $('#flist').innerHTML =
+    row(ALL, '모든 메모', live.length) +
+    folders.map(f => row(f.id, f.name, live.filter(n => n.folder_id === f.id).length, true)).join('') +
+    row(TRASH, '최근 삭제된 항목', S.notes.length - live.length);
+
+  const title = S.q ? '검색 결과' : S.view === ALL ? '모든 메모' : S.view === TRASH ? '최근 삭제된 항목' : S.folders.find(f => f.id === S.view)?.name;
+  $('#ltitle').textContent = title;
+  $('#newn').hidden = S.view === TRASH;
+  const ns = visible();
+  const item = n => {
+    const [t = '새로운 메모', p = '추가 텍스트 없음'] = lines(n.html);
+    return `<div class="it ${n.id === S.open ? 'on' : ''}" data-n="${n.id}"><b>${esc(t)}</b><small><i>${when(n.updated_at)}</i>${esc(p)}</small></div>`;
+  };
+  const pinned = ns.filter(n => n.pinned && S.view !== TRASH);
+  const rest = ns.filter(n => !pinned.includes(n));
+  $('#nlist').innerHTML = (pinned.length ? `<div class="sec">고정됨</div>${pinned.map(item).join('')}<div class="sec">메모</div>` : '') + rest.map(item).join('');
+
+  $('#move').innerHTML = `<option value="">폴더 없음</option>` + folders.map(f => `<option value="${f.id}">${esc(f.name)}</option>`).join('');
+  showEditor();
+}
+
+function toolsFor(n) {
+  if (!n) return;
+  const trash = !!n.deleted_at;
+  $('#normal').hidden = $('#normal2').hidden = trash;
+  $('#trash').hidden = !trash;
+  $('#move').value = S.folders.some(f => f.id === n.folder_id) ? n.folder_id : '';
+  $('#pin').style.opacity = n.pinned ? 1 : .35;
+  $('#ed').contentEditable = !trash;
+}
+
+function showEditor() {
+  const n = note(S.open);
+  $('#tools').hidden = $('#ed').hidden = !n;
+  $('#empty').hidden = !!n;
+  if (!n) return;
+  // 다른 기기에서 바뀐 내용 반영. 이 기기에서 치는 중(저장 대기)이면 안 덮는다
+  // ponytail: 같은 메모를 두 기기에서 '동시에' 치면 나중 저장이 이김(글자 단위 병합 X). 필요하면 Yjs로
+  // (브라우저마다 HTML 직렬화가 달라 innerHTML 대신 마지막으로 넣은 값과 비교 → 커서 튐 방지)
+  if (shown.id !== n.id || (!queue['notes:' + n.id] && shown.html !== n.html)) { $('#ed').innerHTML = n.html; shown = { id: n.id, html: n.html }; }
+  toolsFor(n);
+}
+
+function leave() { // 빈 메모는 남기지 않는다 (애플 메모와 같음)
+  const n = note(S.open);
+  if (n && !n.deleted_at && isEmpty(n.html)) dropNote(n);
+}
+
+function dropNote(n) {
+  S.notes = S.notes.filter(x => x !== n);
+  put('notes', n, true);
+}
+
+function openNote(id) {
+  if (id !== S.open) leave();
+  S.open = id;
+  render();
+  document.body.dataset.pane = 'editor';
+}
+
+function touch(n, fields) {
+  Object.assign(n, fields, { updated_at: now() });
+  put('notes', n);
+}
+
+function newNote() {
+  if (S.view === TRASH) return;
+  S.q = $('#q').value = '';
+  const folder = S.view === ALL ? null : S.view;
+  const n = { id: crypto.randomUUID(), folder_id: folder, html: '', pinned: false, deleted_at: null, updated_at: now() };
+  S.notes.push(n); // 글자를 치기 전엔 서버에 안 올린다
+  openNote(n.id);
+  $('#ed').focus();
+}
+
+// ---------- 이벤트 ----------
+$('#flist').onclick = e => {
+  const more = e.target.closest('[data-more]');
+  if (more) {
+    const f = S.folders.find(x => x.id === more.dataset.more);
+    const name = prompt('폴더 이름 (비우면 폴더 삭제)', f.name);
+    if (name === null) return;
+    if (name.trim()) { f.name = name.trim(); f.updated_at = now(); put('folders', f); }
+    else if (confirm(`'${f.name}' 폴더와 안의 메모를 삭제할까요? 메모는 '최근 삭제된 항목'으로 갑니다.`)) {
+      for (const n of S.notes.filter(n => n.folder_id === f.id && !n.deleted_at)) touch(n, { deleted_at: now() });
+      S.folders = S.folders.filter(x => x !== f);
+      put('folders', f, true);
+    }
+    return render();
+  }
+  const row = e.target.closest('[data-f]');
+  if (!row) return;
+  S.view = row.dataset.f; store('view', S.view);
+  S.q = $('#q').value = '';
+  render();
+  document.body.dataset.pane = 'list';
+};
+$('#newf').onclick = () => {
+  const name = prompt('새 폴더 이름');
+  if (!name?.trim()) return;
+  const f = { id: crypto.randomUUID(), name: name.trim(), updated_at: now() };
+  S.folders.push(f); put('folders', f);
+  S.view = f.id; render();
+  document.body.dataset.pane = 'list';
+};
+$('#nlist').onclick = e => { const it = e.target.closest('[data-n]'); if (it) openNote(it.dataset.n); };
+$('#newn').onclick = newNote;
+$('#q').oninput = e => { S.q = e.target.value; render(); };
+document.querySelectorAll('[data-go]').forEach(b => b.onclick = () => { if (b.dataset.go === 'list') { leave(); S.open = null; render(); } document.body.dataset.pane = b.dataset.go; });
+document.addEventListener('keydown', e => { if ((e.metaKey || e.ctrlKey) && e.key === 'n') { e.preventDefault(); newNote(); } });
+
+const ed = $('#ed');
+const saveEditor = () => { const n = note(S.open); if (n && n.html !== ed.innerHTML) { touch(n, { html: ed.innerHTML }); shown.html = n.html; render(); } };
+ed.oninput = saveEditor;
+ed.onpaste = e => { // 사진은 아직 미지원: 붙여넣으면 메모가 수 MB로 불어나 동기화가 느려진다
+  if ([...e.clipboardData.items].some(i => i.kind === 'file')) { e.preventDefault(); alert('사진 붙여넣기는 아직 지원하지 않아요.'); }
+};
+ed.onclick = e => { // 체크리스트 동그라미 누르면 완료 표시
+  const li = e.target;
+  if (li.tagName === 'LI' && li.parentElement.classList.contains('cl') && e.offsetX < 26 && ed.isContentEditable) { li.classList.toggle('done'); saveEditor(); }
+};
+document.querySelectorAll('[data-cmd]').forEach(b => {
+  b.onmousedown = e => e.preventDefault(); // 편집기 선택 영역 유지
+  b.onclick = () => { document.execCommand(b.dataset.cmd, false, b.dataset.arg); saveEditor(); };
+});
+$('#check').onmousedown = $('#table').onmousedown = e => e.preventDefault();
+$('#check').onclick = () => {
+  const inList = () => getSelection().anchorNode?.parentElement?.closest('#ed ul');
+  if (!inList()) document.execCommand('insertUnorderedList');
+  inList()?.classList.toggle('cl');
+  saveEditor();
+};
+$('#table').onclick = () => {
+  const r = '<tr>' + '<td><br></td>'.repeat(3) + '</tr>';
+  document.execCommand('insertHTML', false, `<table>${r.repeat(3)}</table><div><br></div>`);
+  saveEditor();
+};
+$('#move').onchange = e => { touch(note(S.open), { folder_id: e.target.value || null }); render(); };
+$('#pin').onclick = () => { const n = note(S.open); touch(n, { pinned: !n.pinned }); render(); };
+$('#del').onclick = () => { const n = note(S.open); if (isEmpty(n.html)) dropNote(n); else touch(n, { deleted_at: now() }); S.open = null; render(); document.body.dataset.pane = 'list'; };
+$('#restore').onclick = () => { touch(note(S.open), { deleted_at: null }); render(); };
+$('#purge').onclick = () => { if (confirm('영구 삭제하면 되돌릴 수 없어요.')) { dropNote(note(S.open)); S.open = null; render(); document.body.dataset.pane = 'list'; } };
+
+addEventListener('online', pull);
+document.addEventListener('visibilitychange', () => document.visibilityState === 'visible' && db && pull());
+
+// ---------- 로그인 ----------
+async function start() {
+  $('#auth').hidden = true;
+  $('#app').hidden = false;
+  render();
+  subscribe();
+}
+async function auth(signup) {
+  const email = $('#em').value, password = $('#pw').value;
+  $('#authmsg').textContent = '…';
+  const { data, error } = signup ? await db.auth.signUp({ email, password }) : await db.auth.signInWithPassword({ email, password });
+  if (error) return $('#authmsg').textContent = error.message;
+  if (!data.session) return $('#authmsg').textContent = '메일함의 확인 링크를 누른 뒤 로그인하세요.';
+  start();
+}
+$('#auth').onsubmit = e => { e.preventDefault(); auth(false); };
+$('#signup').onclick = () => $('#auth').reportValidity() && auth(true);
+$('#logout').onclick = async () => {
+  if (Object.keys(queue).length && !confirm('아직 서버에 안 올라간 변경이 있어요. 로그아웃하면 사라집니다. 계속할까요?')) return;
+  await db.auth.signOut();
+  localStorage.clear();
+  location.reload();
+};
+
+(async () => {
+  if (!db) { $('#auth').hidden = false; $('#auth').innerHTML = '<h1>메모</h1><p>config.js 에 Supabase 주소와 키를 넣어 주세요.</p>'; return; }
+  const { data } = await db.auth.getSession();
+  if (data.session) start(); else $('#auth').hidden = false;
+})();
+
+if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js');
+</script>
+</body>
+</html>
