@@ -128,13 +128,20 @@ button:hover{background:var(--hover)}
 const $ = s => document.querySelector(s);
 const ALL = 'all', TRASH = 'trash';
 const load = (k, d) => { try { return JSON.parse(localStorage.getItem(k)) ?? d } catch { return d } };
-const store = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)) } catch {} }; // ponytail: 5MB 한도 넘으면 캐시만 포기, IndexedDB로 옮길 것
+const store = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); return true } catch { return false } };
 const esc = s => s.replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const now = () => new Date().toISOString();
 // 비활성 문서에서 파싱해 스크립트·이미지 로드 없이 글자만 뽑는다
 const plain = html => new DOMParser().parseFromString(html.replace(/<\/?(br|div|p|h[1-6]|li|tr)\b[^>]*>/gi, '\n$&'), 'text/html').body.textContent;
 const lines = html => plain(html).split('\n').map(s => s.trim()).filter(Boolean);
 const isEmpty = html => !lines(html).length && !/<(table|img)/i.test(html);
+// 메모 1000개를 글자 칠 때마다 다시 파싱하지 않도록, 내용이 바뀐 메모만 다시 뽑는다
+const textCache = new Map();
+const textOf = n => {
+  let c = textCache.get(n.id);
+  if (!c || c.html !== n.html) textCache.set(n.id, c = { html: n.html, lines: lines(n.html) });
+  return c.lines;
+};
 
 const cfg = window.MEMO_CFG || {};
 const db = cfg.url && supabase.createClient(cfg.url, cfg.key);
@@ -144,7 +151,9 @@ let S = { folders: load('folders', []), notes: load('notes', []), view: load('vi
 let queue = load('queue', {});
 let channel, shown = {};
 
-const cache = () => { store('folders', S.folders); store('notes', S.notes); };
+// 오프라인용 사본이 저장공간(약 5MB)을 넘기면 사본을 버린다 — 저장 대기열(queue) 자리를 지키기 위해
+// ponytail: 메모가 수천 개로 늘면 IndexedDB로 옮길 것
+const cache = () => { store('folders', S.folders); if (!store('notes', S.notes)) localStorage.removeItem('notes'); };
 const note = id => S.notes.find(n => n.id === id);
 const status = t => $('#status').textContent = t;
 
@@ -235,7 +244,7 @@ function subscribe() {
 function visible() {
   const q = S.q.toLowerCase();
   let ns = S.notes.filter(n => S.view === TRASH ? n.deleted_at : !n.deleted_at);
-  if (q) ns = ns.filter(n => plain(n.html).toLowerCase().includes(q));
+  if (q) ns = ns.filter(n => textOf(n).join(' ').toLowerCase().includes(q));
   else if (S.view !== ALL && S.view !== TRASH) ns = ns.filter(n => n.folder_id === S.view);
   return ns.sort((a, b) => Date.parse(b.updated_at) - Date.parse(a.updated_at));
 }
@@ -261,7 +270,7 @@ function render() {
   $('#newn').hidden = S.view === TRASH;
   const ns = visible();
   const item = n => {
-    const [t = '새로운 메모', p = '추가 텍스트 없음'] = lines(n.html);
+    const [t = '새로운 메모', p = '추가 텍스트 없음'] = textOf(n);
     return `<div class="it ${n.id === S.open ? 'on' : ''}" data-n="${n.id}"><b>${esc(t)}</b><small><i>${when(n.updated_at)}</i>${esc(p)}</small></div>`;
   };
   const pinned = ns.filter(n => n.pinned && S.view !== TRASH);
