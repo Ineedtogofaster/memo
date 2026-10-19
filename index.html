@@ -18,6 +18,16 @@ html,body{margin:0;height:100%;background:var(--bg);color:var(--text);font:14px/
 button{font:inherit;color:inherit;background:none;border:0;cursor:default;padding:0}
 svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round;flex:none}
 [hidden]{display:none!important}
+:root{--ease:cubic-bezier(.2,.8,.2,1)}
+.ib,.f,.it,#pop button,.cap{transition:background-color .15s var(--ease),color .15s var(--ease)}
+#pop{transform-origin:top left;animation:popIn .14s var(--ease)}
+@keyframes popIn{from{opacity:0;transform:scale(.96) translateY(-4px)}}
+.f.appear,.it.appear{animation:fadeDown .22s var(--ease)}
+@keyframes fadeDown{from{opacity:0;transform:translateY(-6px)}}
+#ed ul.cl li::before{transition:background-color .18s var(--ease),border-color .18s var(--ease)}
+@keyframes slideFromRight{from{transform:translateX(28%);opacity:.5}}
+@keyframes slideFromLeft{from{transform:translateX(-22%);opacity:.5}}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
 @media (display-mode:window-controls-overlay){
   .bar{-webkit-app-region:drag;app-region:drag}
   .bar button,.bar input,.bar label{-webkit-app-region:no-drag;app-region:no-drag}
@@ -92,6 +102,7 @@ mark{background:#ffd60a80;color:inherit;border-radius:2px}
 #edsearch{width:220px}
 #edwrap{flex:1;overflow-y:auto}
 #eddate{text-align:center;color:var(--sub);font-size:12px;padding:14px 0 2px}
+#nlist:focus,#flist:focus{outline:0}
 #ed{padding:6px 40px 45vh;outline:0;font-size:calc(15.5px * var(--zoom,1));line-height:1.55;word-wrap:break-word;caret-color:var(--acc)}
 #ed h1{font-size:1.74em;font-weight:700;line-height:1.25;margin:0 0 4px}
 #ed h2{font-size:1.35em;font-weight:700;margin:10px 0 2px}
@@ -197,6 +208,9 @@ body.lightnote #editor{--bg:#fff;--text:#1d1d1f;--line:#e5e5ea;--field:#ececf0;-
   #ed{padding:6px 20px 45vh;font-size:16.5px}
   body[data-pane=editor] #tools{position:fixed;left:0;right:0;bottom:0;z-index:4;justify-content:space-around;background:var(--bg);border-top:1px solid var(--line);padding:6px 10px max(6px,env(safe-area-inset-bottom))}
   #tools .ib{min-width:48px;height:40px}
+  /* 폰: 들어갈 땐 오른쪽에서, 나올 땐 왼쪽에서 밀려 들어옴 */
+  body.fwd .pane{animation:slideFromRight .3s var(--ease)}
+  body.bwd .pane{animation:slideFromLeft .3s var(--ease)}
   #tools .cap,#list .cap{display:contents}
   .back{font-size:17px}
 }
@@ -240,7 +254,7 @@ body.lightnote #editor{--bg:#fff;--text:#1d1d1f;--line:#e5e5ea;--field:#ececf0;-
       <button class="ib" id="sbtoggle" title="사이드바 가리기"><svg><use href="#i-side"/></svg></button>
     </div>
     <h1 class="big">폴더</h1>
-    <div class="scroll" id="flist"></div>
+    <div class="scroll" id="flist" tabindex="0"></div>
     <div class="foot"><span id="status" class="sp"></span><span id="ver"></span><button id="logout">로그아웃</button></div>
     <div class="rs" data-v="--sw"></div>
   </section>
@@ -254,7 +268,7 @@ body.lightnote #editor{--bg:#fff;--text:#1d1d1f;--line:#e5e5ea;--field:#ececf0;-
       <button class="ib narrow newn" title="새 메모"><svg><use href="#i-new"/></svg></button>
     </div>
     <label class="search" id="lsearch"><svg><use href="#i-search"/></svg><input class="q" type="search" placeholder="검색"></label>
-    <div class="scroll" id="nlist"></div>
+    <div class="scroll" id="nlist" tabindex="0"></div>
     <div class="rs" data-v="--lw"></div>
   </section>
 
@@ -465,12 +479,14 @@ function hl(s) {
   return e.replace(new RegExp(esc(q).replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi'), m => `<mark>${m}</mark>`);
 }
 
+let justOpened = null, justMade = null; // 방금 펼친 폴더 · 방금 만든 메모 (한 번만 스르륵)
 function renderFolders(live) {
   const count = new Map();
   for (const n of live) count.set(n.folder_id, (count.get(n.folder_id) || 0) + 1);
   const row = (id, name, n, depth, icon, real) => {
     const chev = real && kids(id).length ? (closed.has(id) ? '›' : '⌄') : '';
-    return `<div class="f ${S.view === id && !S.q ? 'on' : ''}" data-f="${id}" ${real ? DRAG : ''} style="padding-left:${4 + depth * 18}px">` +
+    const appear = real && justOpened && subtree(justOpened).includes(id) && id !== justOpened ? 'appear' : '';
+    return `<div class="f ${S.view === id && !S.q ? 'on' : ''} ${appear}" data-f="${id}" ${real ? DRAG : ''} style="padding-left:${4 + depth * 18}px">` +
       `<span class="chev" ${chev ? `data-tw="${id}"` : ''}>${chev}</span>${svg(icon)}<span class="nm">${esc(name)}</span><span class="n">${n || ''}</span></div>`;
   };
   $('#flist').innerHTML =
@@ -491,7 +507,7 @@ function renderList() {
     const ls = textOf(n);
     const p = (q && ls.slice(1).find(l => l.toLowerCase().includes(q))) || ls[1] || '추가 텍스트 없음';
     const f = showFolder && folder(n.folder_id);
-    return `<div class="it ${n.id === S.open ? 'on' : ''}" data-n="${n.id}" ${DRAG}><b>${hl(titleOf(n))}</b>` +
+    return `<div class="it ${n.id === S.open || sel.has(n.id) ? 'on' : ''} ${n.id === justMade ? 'appear' : ''}" data-n="${n.id}" ${DRAG}><b>${hl(titleOf(n))}</b>` +
       `<div class="l2"><i>${when(dateOf(n))}</i>${hl(p)}</div>${f ? `<div class="l3">${svg('folder')}${esc(f.name)}</div>` : ''}</div>`;
   };
   const pinned = S.view === TRASH && !searching ? [] : ns.filter(n => n.pinned);
@@ -519,6 +535,7 @@ function render() {
   $('#sbshow').hidden = !P.nosb;
   renderFolders(live);
   renderList();
+  justOpened = justMade = null;
   showEditor();
 }
 
@@ -526,6 +543,7 @@ function showEditor() {
   const n = note(S.open);
   $('#edwrap').hidden = !n;
   $('#empty').hidden = !!n;
+  $('#empty').textContent = sel.size > 1 ? `메모 ${sel.size}개 선택됨` : '메모 없음';
   $$('.nb').forEach(b => b.disabled = !n || !!n?.deleted_at);
   $('#more').disabled = !n;
   $$('.newn').forEach(b => b.disabled = S.view === TRASH);
@@ -558,6 +576,8 @@ function dropNote(n) {
 function openNote(id) {
   if (id !== S.open) leave();
   S.open = id;
+  sel = new Set([id]);
+  anchor = cursor = id;
   render();
   goPane('editor');
 }
@@ -574,6 +594,7 @@ function newNote() {
   const t = now();
   const n = { id: crypto.randomUUID(), folder_id: S.view === ALL ? null : S.view, html: `<${P.startStyle}><br></${P.startStyle}>`, pinned: false, deleted_at: null, updated_at: t, created_at: t };
   S.notes.push(n); // 글자를 치기 전엔 서버에 안 올린다
+  justMade = n.id;
   openNote(n.id);
   const ed = $('#ed');
   ed.focus();
@@ -581,9 +602,11 @@ function newNote() {
 }
 
 function deleteNote(n) {
-  if (isEmpty(n.html)) dropNote(n); else save(n, { deleted_at: now() }, false);
-  if (S.open === n.id) { S.open = null; goPane('list'); }
-  render();
+  fadeOut([n.id], () => {
+    if (isEmpty(n.html)) dropNote(n); else save(n, { deleted_at: now() }, false);
+    if (S.open === n.id) { S.open = null; goPane('list'); }
+    render();
+  });
 }
 
 function setQ(v) {
@@ -781,10 +804,34 @@ function mergeGroup(ul) {
 const sinkAll = ul => { ul = mergeGroup(ul); [...ul.children].filter(li => li.classList.contains('done')).forEach(li => ul.appendChild(li)); };
 function tick(li) {
   const done = li.classList.toggle('done');
+  if (done) li.animate?.([{ transform: 'scale(.6)' }, { transform: 'scale(1.18)' }, { transform: 'scale(1)' }], { duration: 260, easing: 'ease-out', pseudoElement: '::before' });
   if (!P.sink) return;
-  const ul = mergeGroup(li.parentElement);
-  if (done) ul.appendChild(li);
-  else ul.insertBefore(li, [...ul.children].find(x => x !== li && x.classList.contains('done')) || null);
+  const move = () => {
+    if (!li.isConnected) return;
+    const ul = mergeGroup(li.parentElement);
+    glide(ul, () => {
+      if (done) ul.appendChild(li);
+      else ul.insertBefore(li, [...ul.children].find(x => x !== li && x.classList.contains('done')) || null);
+    });
+    saveEditor();
+  };
+  done ? setTimeout(move, 350) : move(); // 애플처럼 체크 표시를 잠깐 보여준 뒤 내려간다
+}
+// 순서가 바뀐 항목들이 순간이동하지 않고 미끄러지게 (FLIP)
+function glide(parent, change) {
+  const items = [...parent.children], before = new Map(items.map(x => [x, x.getBoundingClientRect().top]));
+  change();
+  for (const x of items) {
+    const d = before.get(x) - x.getBoundingClientRect().top;
+    if (d) x.animate?.([{ transform: `translateY(${d}px)` }, { transform: 'none' }], { duration: 260, easing: 'cubic-bezier(.2,.8,.2,1)' });
+  }
+}
+// 지울 메모 줄이 옆으로 사라진 뒤 실제로 지운다
+function fadeOut(ids, then) {
+  const rows = ids.map(id => $(`#nlist [data-n="${id}"]`)).filter(Boolean);
+  if (!rows.length || matchMedia('(prefers-reduced-motion:reduce)').matches) return then();
+  rows.forEach(r => r.animate([{ opacity: 1 }, { opacity: 0, transform: 'translateX(-16px)' }], { duration: 160, easing: 'ease-in', fill: 'forwards' }));
+  setTimeout(then, 160);
 }
 function toggleCheck() {
   const sel = getSelection();
@@ -1153,7 +1200,7 @@ function deleteFolder(f) {
 $('#flist').onclick = e => {
   const tw = e.target.closest('[data-tw]');
   if (tw) { // ⌄ › 접기/펴기
-    closed.has(tw.dataset.tw) ? closed.delete(tw.dataset.tw) : closed.add(tw.dataset.tw);
+    if (closed.has(tw.dataset.tw)) { closed.delete(tw.dataset.tw); justOpened = tw.dataset.tw; } else closed.add(tw.dataset.tw);
     store('closed', [...closed]);
     return render();
   }
@@ -1173,15 +1220,109 @@ $('#flist').oncontextmenu = e => { // 오른쪽 클릭 / 폰에선 길게 누르
 $('#nlist').onclick = e => {
   if (e.target.closest('[data-pin]')) { P.pinOpen = !P.pinOpen; savePrefs(); return render(); }
   const it = e.target.closest('[data-n]');
-  if (it) openNote(it.dataset.n);
+  if (!it) return;
+  if (MULTI && (e.shiftKey || e.metaKey || e.ctrlKey)) return pick(it.dataset.n, e.shiftKey ? 'range' : 'toggle');
+  openNote(it.dataset.n);
 };
 $('#nlist').ondblclick = e => { const n = note(e.target.closest('[data-n]')?.dataset.n); if (n && MULTI) openWindow(n); };
 $('#nlist').oncontextmenu = e => {
   const n = note(e.target.closest('[data-n]')?.dataset.n);
   if (!n) return;
   e.preventDefault();
+  if (sel.size > 1 && sel.has(n.id)) return multiMenu(e.clientX, e.clientY);
   noteMenu(n, e.clientX, e.clientY);
 };
+
+// ---------- 키보드: 메모 목록 (애플 메모와 같음) ----------
+// ↑↓ 이동 · ⇧↑↓ 여러 개 선택 · ⌘A 전체 선택 · ⌫ 선택한 메모 삭제 · ⏎/⇥ 편집 시작
+let sel = new Set(), anchor = null, cursor = null;
+const order = () => $$('#nlist .it').map(x => x.dataset.n);
+function pick(id, mode) {
+  const o = order();
+  if (mode === 'range' && anchor && o.includes(anchor)) {
+    const [a, b] = [o.indexOf(anchor), o.indexOf(id)].sort((x, y) => x - y);
+    sel = new Set(o.slice(a, b + 1));
+  } else if (mode === 'toggle') {
+    if (!sel.size && S.open) sel.add(S.open);
+    sel.has(id) && sel.size > 1 ? sel.delete(id) : sel.add(id);
+    anchor = id;
+  } else { sel = new Set([id]); anchor = id; }
+  cursor = id;
+  if (sel.size === 1) return openNote([...sel][0]);
+  leave();
+  S.open = null;
+  render();
+}
+function scrollToNote(id) { $(`#nlist [data-n="${id}"]`)?.scrollIntoView({ block: 'nearest' }); }
+$('#nlist').onkeydown = e => {
+  const o = order();
+  if (!o.length || e.target !== $('#nlist')) return;
+  const k = e.key;
+  if (k === 'ArrowDown' || k === 'ArrowUp') {
+    e.preventDefault();
+    const from = cursor && o.includes(cursor) ? o.indexOf(cursor) : o.indexOf(S.open);
+    const i = Math.max(0, Math.min(o.length - 1, from + (k === 'ArrowDown' ? 1 : -1)));
+    if (e.shiftKey) { if (!anchor) anchor = o[Math.max(from, 0)]; pick(o[i], 'range'); }
+    else openNote(o[i]);
+    $('#nlist').focus();
+    return scrollToNote(o[i]);
+  }
+  if ((e.metaKey || e.ctrlKey) && k.toLowerCase() === 'a') { e.preventDefault(); sel = new Set(o); anchor = o[0]; cursor = o.at(-1); leave(); S.open = null; return render(); }
+  if (k === 'Backspace' || k === 'Delete') { e.preventDefault(); return deleteSelected(); }
+  if ((k === 'Enter' || k === 'Tab') && S.open) { e.preventDefault(); ed.focus(); getSelection().collapse(ed.firstChild || ed, 0); }
+};
+const selected = () => (sel.size ? [...sel] : S.open ? [S.open] : []).map(note).filter(Boolean);
+function deleteSelected() {
+  const ns = selected();
+  if (!ns.length) return;
+  const o = order(), next = o.find((id, i) => i > o.indexOf(ns.at(-1).id) && !sel.has(id)) || o.filter(id => !sel.has(id)).at(-1);
+  if (S.view === TRASH && !confirm(`메모 ${ns.length}개를 영구 삭제할까요? 되돌릴 수 없어요.`)) return;
+  fadeOut(ns.map(n => n.id), () => {
+    if (S.view === TRASH) ns.forEach(dropNote);
+    else ns.forEach(n => isEmpty(n.html) ? dropNote(n) : save(n, { deleted_at: now() }, false));
+    sel = new Set();
+    S.open = null;
+    render();
+    if (next && note(next) && stacked() === false) openNote(next);
+    $('#nlist').focus();
+  });
+}
+function multiMenu(x, y) {
+  const ns = selected(), allPinned = ns.every(n => n.pinned);
+  if (S.view === TRASH) return menu([
+    { label: `메모 ${ns.length}개 복구`, act: () => { ns.forEach(n => save(n, { deleted_at: null }, false)); sel = new Set(); render(); } },
+    { label: `메모 ${ns.length}개 영구 삭제`, danger: true, act: deleteSelected },
+  ], x, y);
+  menu([
+    { title: `메모 ${ns.length}개` },
+    I(allPinned ? 'pinoff' : 'pin', allPinned ? '메모 고정 해제' : '메모 고정', () => { ns.forEach(n => save(n, { pinned: !allPinned }, false)); render(); }),
+    I('folder', '다음으로 이동', () => menu([{ title: `메모 ${ns.length}개 이동` }, ...folderPicker(null, id => { ns.forEach(n => save(n, { folder_id: id }, false)); sel = new Set(); render(); })], x, y), '›'),
+    '-',
+    I('trash', '삭제', deleteSelected, '⌫'),
+  ], x, y);
+}
+
+// ---------- 키보드: 폴더 목록 ----------
+// ↑↓ 이동 · ← 접기 · → 펼치기 · ⏎/⇥ 메모 목록으로
+$('#flist').onkeydown = e => {
+  if (e.target !== $('#flist')) return;
+  const rows = $$('#flist [data-f]').map(x => x.dataset.f), i = rows.indexOf(S.view), k = e.key;
+  if (k === 'ArrowDown' || k === 'ArrowUp') {
+    e.preventDefault();
+    S.view = rows[Math.max(0, Math.min(rows.length - 1, i + (k === 'ArrowDown' ? 1 : -1)))];
+    store('view', S.view); setQ(''); render();
+    $(`#flist [data-f="${S.view}"]`)?.scrollIntoView({ block: 'nearest' });
+  }
+  if ((k === 'ArrowLeft' || k === 'ArrowRight') && folder(S.view) && kids(S.view).length) {
+    e.preventDefault();
+    if (k === 'ArrowLeft') closed.add(S.view); else { closed.delete(S.view); justOpened = S.view; }
+    store('closed', [...closed]); render();
+  }
+  if (k === 'Enter' || k === 'Tab') { e.preventDefault(); $('#nlist').focus(); const first = order()[0]; if (first && !S.open) openNote(first); }
+};
+// 목록·폴더를 누르면 키보드도 그쪽으로 (편집기에서 빠져나옴)
+$('#nlist').addEventListener('mousedown', e => { if (!e.target.closest('input')) setTimeout(() => $('#nlist').focus({ preventScroll: true })); });
+$('#flist').addEventListener('mousedown', () => setTimeout(() => $('#flist').focus({ preventScroll: true })));
 $('#newf').onclick = () => newFolder();
 $('#sbtoggle').onclick = () => { P.nosb = true; savePrefs(); render(); };
 $('#sbshow').onclick = () => { P.nosb = false; savePrefs(); render(); };
@@ -1203,7 +1344,10 @@ $$('[data-go]').forEach(b => b.onclick = () => goPane(b.dataset.go));
 const LV = { folders: 0, list: 1, editor: 2 };
 const stacked = () => !SINGLE && matchMedia('(max-width:1023px)').matches;
 function showPane(p) {
-  if (document.body.dataset.pane === 'editor' && p !== 'editor') { leave(); S.open = null; render(); }
+  const cur = document.body.dataset.pane;
+  if (cur === 'editor' && p !== 'editor') { leave(); S.open = null; render(); }
+  document.body.classList.toggle('fwd', LV[p] > LV[cur]);
+  document.body.classList.toggle('bwd', LV[p] < LV[cur]);
   document.body.dataset.pane = p;
 }
 function goPane(p) {
@@ -1240,6 +1384,7 @@ document.addEventListener('keydown', e => {
   if (both && (k === '=' || k === '+')) return inEd && go(() => cmd('superscript'));
   if (both && k === '-') return inEd && go(() => cmd('subscript'));
   if (k === 'n') return go(sh ? () => newFolder() : newNote);
+  if (k === 's' && e.altKey) return go(() => { P.nosb = !P.nosb; savePrefs(); render(); });
   if (k === 'f' && e.altKey) return go(() => $$('.q').find(i => i.offsetParent)?.focus());
   if (k === 'f' && open) return go(() => openFind(false));
   if (k === 'd' && !sh && open) return go(() => duplicate(open));
@@ -1267,7 +1412,7 @@ document.addEventListener('keydown', e => {
 let drag = null;
 document.addEventListener('dragstart', e => {
   const n = e.target.closest?.('[data-n]'), f = e.target.closest?.('[data-f]');
-  drag = n ? { type: 'note', id: n.dataset.n } : f ? { type: 'folder', id: f.dataset.f } : null;
+  drag = n ? { type: 'note', id: n.dataset.n, ids: sel.has(n.dataset.n) && sel.size > 1 ? [...sel] : [n.dataset.n] } : f ? { type: 'folder', id: f.dataset.f } : null;
   if (drag) { e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', drag.id); }
 });
 document.addEventListener('dragend', () => { drag = null; clearDrop(); });
@@ -1294,8 +1439,9 @@ $('#flist').ondrop = e => {
   if (!z) return;
   e.preventDefault();
   if (drag.type === 'note') {
-    const n = note(drag.id);
-    if (z.id === TRASH) deleteNote(n); else { save(n, { folder_id: z.id }, false); render(); }
+    const ns = drag.ids.map(note).filter(Boolean);
+    if (z.id === TRASH) { ns.forEach(n => save(n, { deleted_at: now() }, false)); sel = new Set(); if (drag.ids.includes(S.open)) S.open = null; render(); }
+    else { ns.forEach(n => save(n, { folder_id: z.id }, false)); render(); }
     return;
   }
   const f = folder(drag.id), t = folder(z.id);
@@ -1327,7 +1473,7 @@ addEventListener('online', pull);
 document.addEventListener('visibilitychange', () => document.visibilityState === 'visible' && db && pull());
 
 // ---------- 로그인 ----------
-const VERSION = '10.20-b';
+const VERSION = '10.20-c';
 function start() {
   $('#ver').textContent = 'v' + VERSION;
   $('#auth').hidden = true;
