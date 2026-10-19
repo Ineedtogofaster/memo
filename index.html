@@ -558,7 +558,7 @@ function openNote(id) {
   if (id !== S.open) leave();
   S.open = id;
   render();
-  document.body.dataset.pane = 'editor';
+  goPane('editor');
 }
 
 // bump=false: 고정·폴더 이동은 수정 날짜를 바꾸지 않는다 (애플 메모와 같음)
@@ -581,7 +581,7 @@ function newNote() {
 
 function deleteNote(n) {
   if (isEmpty(n.html)) dropNote(n); else save(n, { deleted_at: now() }, false);
-  if (S.open === n.id) { S.open = null; document.body.dataset.pane = 'list'; }
+  if (S.open === n.id) { S.open = null; goPane('list'); }
   render();
 }
 
@@ -1046,7 +1046,7 @@ function newFolder(parent_id = null) {
   if (parent_id) { closed.delete(parent_id); store('closed', [...closed]); }
   S.view = f.id; setQ('');
   render();
-  document.body.dataset.pane = 'list';
+  goPane('list');
 }
 
 // 형제 폴더들 사이에 끼워 넣고 순서 번호를 다시 매긴다
@@ -1082,7 +1082,7 @@ $('#flist').onclick = e => {
   setQ('');
   render();
   $('#nlist').scrollTop = 0;
-  document.body.dataset.pane = 'list';
+  goPane('list');
 };
 $('#flist').oncontextmenu = e => { // 오른쪽 클릭 / 폰에선 길게 누르기
   const f = folder(e.target.closest('[data-f]')?.dataset.f);
@@ -1115,10 +1115,30 @@ $('#table').onclick = () => {
 };
 $$('.newn').forEach(b => b.onclick = newNote);
 $$('.q').forEach(i => i.oninput = () => { setQ(i.value); renderList(); renderFolders(S.notes.filter(n => !n.deleted_at)); });
-$$('[data-go]').forEach(b => b.onclick = () => {
-  if (b.dataset.go === 'list') { leave(); S.open = null; render(); }
-  document.body.dataset.pane = b.dataset.go;
-});
+$$('[data-go]').forEach(b => b.onclick = () => goPane(b.dataset.go));
+
+// 폰 뒤로가기: 메모 → 메모 목록 → 폴더 → (그다음에야) 앱 종료
+// 화면을 한 단계 들어갈 때마다 기록을 남기고, 나올 땐 기록을 되돌린다 (popstate가 화면을 맞춤)
+const LV = { folders: 0, list: 1, editor: 2 };
+const stacked = () => !SINGLE && matchMedia('(max-width:1023px)').matches;
+function showPane(p) {
+  if (document.body.dataset.pane === 'editor' && p !== 'editor') { leave(); S.open = null; render(); }
+  document.body.dataset.pane = p;
+}
+function goPane(p) {
+  const cur = document.body.dataset.pane;
+  if (p === cur) return;
+  if (!stacked()) return showPane(p);
+  if (LV[p] > LV[cur]) { history.pushState({ pane: p }, ''); showPane(p); }
+  else history.go(LV[p] - LV[cur]);
+}
+addEventListener('popstate', e => showPane(e.state?.pane || 'folders'));
+function initHistory() { // 처음 열 때: 폴더 → (지금 화면) 순서로 기록을 깔아 둔다
+  if (!stacked()) return;
+  const p = document.body.dataset.pane;
+  history.replaceState({ pane: 'folders' }, '');
+  for (const x of ['list', 'editor'].slice(0, LV[p])) history.pushState({ pane: x }, '');
+}
 // 단축키 (애플 메모와 같은 키)
 document.addEventListener('keydown', e => {
   const inEd = document.activeElement === ed || ed.contains(document.activeElement);
@@ -1223,6 +1243,7 @@ function start() {
   if (SINGLE) { document.body.classList.add('single'); document.body.dataset.pane = 'editor'; S.open = SINGLE; }
   applyWidths();
   render();
+  initHistory();
   subscribe();
 }
 async function auth(signup) {
