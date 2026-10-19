@@ -260,7 +260,7 @@ const db = cfg.url && supabase.createClient(cfg.url, cfg.key);
 
 let S = { folders: load('folders', []), notes: load('notes', []), view: load('view', ALL), open: null, q: '' };
 // 보기 설정 (기기마다): 정렬 기준·날짜 그룹·순서·패널 너비
-let P = Object.assign({ sort: 'updated', group: true, rev: false, pinOpen: true, nosb: false, sinkChecked: false, sw: 260, lw: 300 }, load('prefs', {}));
+let P = Object.assign({ sort: 'updated', group: true, rev: false, pinOpen: true, nosb: false, sink: true, sw: 260, lw: 300 }, load('prefs', {}));
 const savePrefs = () => store('prefs', P);
 // 서버에 아직 못 올린 변경: "table:id" → {table,row,del}. 저장 성공 전엔 절대 안 지운다
 let queue = load('queue', {});
@@ -561,8 +561,10 @@ function noteMenu(n, x, y) {
     { label: '폴더로 이동…', act: () => menu([{ title: '이동할 폴더' }, ...folderPicker(n.folder_id, id => { save(n, { folder_id: id }, false); render(); })], x, y) },
     '-',
     ...(n.id === S.open && $$('#ed ul.cl li').length ? ['-',
-      { label: '체크한 항목 아래로 이동', act: () => { $$('#ed ul.cl').forEach(sinkAll); saveEditor(); } },
-      { label: '모두 체크 해제', act: () => { $$('#ed ul.cl li.done').forEach(li => li.classList.remove('done')); saveEditor(); } }] : []),
+      { label: '모두 체크', act: () => { $$('#ed ul.cl li').forEach(li => li.classList.add('done')); saveEditor(); } },
+      { label: '모두 체크 해제', act: () => { $$('#ed ul.cl li.done').forEach(li => li.classList.remove('done')); saveEditor(); } },
+      { label: '체크한 항목 하단으로 이동', act: () => { $$('#ed ul.cl').forEach(ul => ul.isConnected && sinkAll(ul)); saveEditor(); } },
+      { label: '체크 항목 삭제', act: () => { $$('#ed ul.cl li.done').forEach(li => li.remove()); $$('#ed ul.cl:empty').forEach(ul => ul.remove()); saveEditor(); } }] : []),
     '-',
     { label: '삭제', danger: true, act: () => deleteNote(n) },
   ], x, y);
@@ -593,24 +595,24 @@ function viewMenu(x, y) {
     '-',
     { label: '날짜별로 그룹화', check: P.group && dateSort, disabled: !dateSort, act: set('group', !P.group) },
     '-',
-    { label: '체크하면 자동으로 아래로 이동', check: P.sinkChecked, act: set('sinkChecked', !P.sinkChecked) },
+    { label: '체크한 항목 자동으로 분류', check: P.sink, act: set('sink', !P.sink) },
   ], x, y);
 }
 
 const FORMATS = [
   { label: '제목', key: '⇧⌘T', act: () => block('H1') },
   { label: '머리말', key: '⇧⌘H', act: () => block('H2') },
-  { label: '부제목', key: '⇧⌘J', act: () => block('H3') },
+  { label: '부머리말', key: '⇧⌘J', act: () => block('H3') },
   { label: '본문', key: '⇧⌘B', act: () => block('DIV') },
-  { label: '고정폭', key: '⇧⌘M', act: () => block('PRE') },
+  { label: '모노 스타일', key: '⇧⌘M', act: () => block('PRE') },
   '-',
-  { label: '• 글머리 기호 목록', act: () => list('') },
+  { label: '• 구분점 목록', act: () => list('') },
   { label: '– 대시 목록', act: () => list('dash') },
   { label: '1. 번호 목록', act: () => { listCmd('insertOrderedList'); saveEditor(); } },
   '-',
-  { label: '굵게', key: '⌘B', act: () => cmd('bold') },
-  { label: '기울임꼴', key: '⌘I', act: () => cmd('italic') },
-  { label: '밑줄', key: '⌘U', act: () => cmd('underline') },
+  { label: '볼드체', key: '⌘B', act: () => cmd('bold') },
+  { label: '이탤릭체', key: '⌘I', act: () => cmd('italic') },
+  { label: '밑줄체', key: '⌘U', act: () => cmd('underline') },
   { label: '취소선', act: () => cmd('strikeThrough') },
 ].map(f => f === '-' ? f : { ...f, html: `<span class="sp">${esc(f.label)}</span><span style="opacity:.5">${f.key || ''}</span>` });
 
@@ -640,11 +642,22 @@ function list(cls) { // 글머리/대시/체크리스트 전환 (애플 메모�
   if (ul) ul.className = cls;
   saveEditor();
 }
-// 체크한 항목은 목록 아래로 (순서는 유지). 자동 설정이면 체크할 때마다, 해제하면 체크 안 된 항목 맨 뒤로
-const sinkAll = ul => [...ul.children].filter(li => li.classList.contains('done')).forEach(li => ul.appendChild(li));
+// 빈 줄 없이 바로 붙어 있는 체크리스트들은 하나의 목록 (애플 메모와 같음) → 합친 뒤 정렬
+const clIn = el => el?.matches?.('ul.cl') ? el
+  : el && el !== ed && el.tagName === 'DIV' && el.childElementCount === 1 && el.firstElementChild.matches('ul.cl') && el.textContent === el.firstElementChild.textContent ? el.firstElementChild : null;
+function mergeGroup(ul) {
+  let block = clIn(ul.parentElement) === ul ? ul.parentElement : ul;
+  while (clIn(block.previousElementSibling)) block = block.previousElementSibling;
+  const first = clIn(block);
+  for (let b = block.nextElementSibling; clIn(b);) { const nx = b.nextElementSibling; first.append(...clIn(b).children); b.remove(); b = nx; }
+  return first;
+}
+// 체크한 항목은 덩어리 맨 아래로 (순서 유지). 체크를 풀면 체크 안 된 항목들 맨 뒤로
+const sinkAll = ul => { ul = mergeGroup(ul); [...ul.children].filter(li => li.classList.contains('done')).forEach(li => ul.appendChild(li)); };
 function tick(li) {
-  const done = li.classList.toggle('done'), ul = li.parentElement;
-  if (!P.sinkChecked) return;
+  const done = li.classList.toggle('done');
+  if (!P.sink) return;
+  const ul = mergeGroup(li.parentElement);
   if (done) ul.appendChild(li);
   else ul.insertBefore(li, [...ul.children].find(x => x !== li && x.classList.contains('done')) || null);
 }
