@@ -7,6 +7,10 @@
   "display_override": ["window-controls-overlay"],
   "background_color": "#ffffff",
   "theme_color": "#f6f5f2",
+  "shortcuts": [
+    { "name": "모든 메모", "short_name": "모든 메모", "url": "./" },
+    { "name": "새로운 메모", "short_name": "새로운 메모", "url": "./?new" }
+  ],
   "icons": [
     { "src": "icon-192.png", "sizes": "192x192", "type": "image/png" },
     { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }

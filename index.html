@@ -137,6 +137,7 @@ mark{background:#ffd60a80;color:inherit;border-radius:2px}
 body.nocount .f .n{visibility:hidden}
 body.single #app{grid-template-columns:1fr!important}
 body.single #folders,body.single #list,body.single .back,body.single #edsearch{display:none!important}
+body:not(.single) .only-single{display:none!important}
 body.single #editor{display:flex!important;grid-column:1}
 @media (max-width:599px){
   body.single[data-pane=editor] #tools{position:static;border:0;padding:0;background:none;justify-content:flex-start}
@@ -275,6 +276,7 @@ body.lightnote #editor{--bg:#fff;--text:#1d1d1f;--line:#e5e5ea;--field:#ececf0;-
   <section class="pane" id="editor">
     <div class="bar" id="edbar">
       <button class="ib back" data-go="list"><svg><use href="#i-back"/></svg><span id="backname"></span></button>
+      <span class="cap only-single"><button class="ib" id="tomain" title="모든 메모 (⌘0)"><svg><use href="#i-side"/></svg></button></span>
       <div id="tools">
         <span class="cap"><button class="ib newn" title="새 메모 (⌘N)"><svg><use href="#i-new"/></svg></button></span>
         <span class="cap"><button class="ib nb" id="fmt" title="서식"><b style="font-size:15px">가<small>가</small></b></button>
@@ -1460,7 +1462,7 @@ document.addEventListener('keydown', e => {
   if (sh && c === 'Period') return go(() => zoom(.1));
   if (sh && c === 'Comma') return go(() => zoom(-.1));
   if (sh && c === 'Digit0') return go(() => zoom(0));
-  if (!sh && c === 'Digit0') return go(() => $('#nlist').focus());
+  if (!sh && c === 'Digit0') return go(() => SINGLE ? openMain() : $('#nlist').focus());
   if (!sh && c === 'Comma') return go(() => viewMenu(...below($('#viewmenu'))));
   if (!inEd) return;
   // 편집기 안
@@ -1617,15 +1619,19 @@ addEventListener('online', pull);
 document.addEventListener('visibilitychange', () => document.visibilityState === 'visible' && db && pull());
 
 // ---------- 로그인 ----------
-const VERSION = '10.20-g';
+const VERSION = '10.20-h';
+// 메인 창(폴더·목록이 있는 창)을 열거나, 이미 열려 있으면 앞으로
+function openMain() { window.open(location.pathname, 'yun-main'); }
 function start() {
+  if (!SINGLE) window.name = 'yun-main';
   $('#ver').textContent = 'v' + VERSION;
   $('#auth').hidden = true;
   $('#app').hidden = false;
-  if (SINGLE) { document.body.classList.add('single'); document.body.dataset.pane = 'editor'; S.open = SINGLE; }
+  if (SINGLE) { document.body.classList.add('single'); document.body.dataset.pane = 'editor'; S.open = SINGLE; $('#tomain').onclick = openMain; }
   applyWidths();
   render();
   initHistory();
+  if (new URLSearchParams(location.search).has('new')) { history.replaceState(history.state, '', location.pathname); newNote(); }
   subscribe();
 }
 async function auth(signup) {
