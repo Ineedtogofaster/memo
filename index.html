@@ -124,6 +124,16 @@ mark{background:#ffd60a80;color:inherit;border-radius:2px}
 #findbar button{padding:5px 9px;border-radius:7px;background:var(--field)}
 #fcount{color:var(--sub);font-size:12px;min-width:36px}
 body.nocount .f .n{visibility:hidden}
+body.single #app{grid-template-columns:1fr!important}
+body.single #folders,body.single #list,body.single .back,body.single #edsearch{display:none!important}
+body.single #editor{display:flex!important;grid-column:1}
+@media (max-width:599px){
+  body.single[data-pane=editor] #tools{position:static;border:0;padding:0;background:none;justify-content:flex-start}
+  body.single #tools .cap{display:inline-flex}
+  body.single #tools .ib{min-width:36px;height:32px}
+  body.single #ed{padding:6px 24px 45vh}
+}
+@media (display-mode:window-controls-overlay){body.single #edbar{padding-left:calc(env(titlebar-area-x,0px) + 8px)}}
 body.lightnote #editor{--bg:#fff;--text:#1d1d1f;--line:#e5e5ea;--field:#ececf0;--sub:#8e8e93;--capbg:#fff;background:#fff;color:#1d1d1f}
 @media print{
   #folders,#list,#edbar,#findbar,#eddate,#pop,#auth{display:none!important}
@@ -136,11 +146,14 @@ body.lightnote #editor{--bg:#fff;--text:#1d1d1f;--line:#e5e5ea;--field:#ececf0;-
 #empty{flex:1;display:flex;align-items:center;justify-content:center;color:var(--sub)}
 
 /* 팝업 메뉴 */
-#pop{position:fixed;z-index:20;background:var(--pop);border:1px solid var(--line);border-radius:10px;box-shadow:0 10px 32px #0004;padding:5px;min-width:200px;max-height:70vh;overflow-y:auto}
+#pop{position:fixed;z-index:20;background:color-mix(in srgb,var(--pop) 86%,transparent);-webkit-backdrop-filter:blur(24px) saturate(1.6);backdrop-filter:blur(24px) saturate(1.6);border:1px solid var(--capline);border-radius:14px;box-shadow:0 12px 36px #0003;padding:6px;min-width:220px;max-height:70vh;overflow-y:auto}
 #pop button{display:flex;gap:8px;width:100%;text-align:left;padding:6px 10px;border-radius:6px;font-size:13.5px;white-space:nowrap}
 #pop button:hover:not(:disabled){background:var(--acc);color:#000}
 #pop button:disabled{opacity:.4}
 #pop button .ck{width:12px;flex:none}
+#pop button svg{width:17px;height:17px;opacity:.8}
+#pop button.ic{gap:10px;padding:7px 12px;font-size:14px}
+#pop .arr{opacity:.5}
 #pop .danger{color:#e5484d}
 #pop hr{border:0;border-top:1px solid var(--line);margin:4px 6px}
 #pop .lbl{font-size:11.5px;color:var(--sub);padding:4px 10px 2px}
@@ -212,6 +225,11 @@ body.lightnote #editor{--bg:#fff;--text:#1d1d1f;--line:#e5e5ea;--field:#ececf0;-
   <symbol id="i-more" viewBox="0 0 24 24"><circle cx="5.5" cy="12" r="1.2" fill="currentColor"/><circle cx="12" cy="12" r="1.2" fill="currentColor"/><circle cx="18.5" cy="12" r="1.2" fill="currentColor"/></symbol>
   <symbol id="i-search" viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6"/><path d="m15 15 5 5"/></symbol>
   <symbol id="i-back" viewBox="0 0 24 24"><path d="m15 5-7 7 7 7"/></symbol>
+  <symbol id="i-window" viewBox="0 0 24 24"><rect x="3" y="5" width="15" height="12" rx="2"/><path d="M21 9v8a2 2 0 0 1-2 2H8"/><path d="M7.5 11h6M10.5 8v6"/></symbol>
+  <symbol id="i-pin" viewBox="0 0 24 24"><path d="M9 4h6l-1 5 3 3H7l3-3z"/><path d="M12 15v5"/></symbol>
+  <symbol id="i-pinoff" viewBox="0 0 24 24"><path d="M9 4h6l-1 5 3 3H7l3-3z"/><path d="M12 15v5M4 4l16 16"/></symbol>
+  <symbol id="i-dup" viewBox="0 0 24 24"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2M14 11v6M11 14h6"/></symbol>
+  <symbol id="i-share" viewBox="0 0 24 24"><path d="M12 3v12M8 7l4-4 4 4"/><path d="M7 10H6v9a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2v-9h-1"/></symbol>
 </svg>
 
 <div id="app" hidden>
@@ -296,7 +314,14 @@ let S = { folders: load('folders', []), notes: load('notes', []), view: load('vi
 let P = Object.assign({ sort: 'updated', group: true, rev: false, pinOpen: true, nosb: false, sink: true, counts: true, startStyle: 'H1', zoom: 1, lightNote: false, sw: 260, lw: 300 }, load('prefs', {}));
 const savePrefs = () => store('prefs', P);
 // 서버에 아직 못 올린 변경: "table:id" → {table,row,del}. 저장 성공 전엔 절대 안 지운다
-let queue = load('queue', {});
+const SINGLE = new URLSearchParams(location.search).get('note'); // 작은 창으로 연 메모
+const MULTI = !SINGLE && matchMedia('(pointer:fine)').matches;      // 맥: 새 창 열기 가능
+const QKEY = SINGLE ? 'queue:' + SINGLE : 'queue';
+let queue = load(QKEY, {});
+if (!SINGLE) for (const k of Object.keys(localStorage)) if (k.startsWith('queue:')) {
+  for (const [id, op] of Object.entries(load(k, {}))) if (!queue[id] || (op.row.updated_at || '') > (queue[id].row.updated_at || '')) queue[id] = op;
+  localStorage.removeItem(k);
+}
 let channel, shown = {};
 
 // 폴더 트리. 순서는 position(끌어서 바꾼 순서) → 이름. 부모가 사라진 폴더는 맨 위로
@@ -319,7 +344,7 @@ const status = t => $('#status').textContent = t;
 // ---------- 동기화 ----------
 function put(table, row, del = false) {
   queue[table + ':' + row.id] = { table, row: del ? { id: row.id } : { ...row }, del };
-  store('queue', queue);
+  store(QKEY, queue);
   cache();
   clearTimeout(put.t);
   put.t = setTimeout(flush, 400);
@@ -335,7 +360,7 @@ async function flush() {
       const { error } = op.del ? await t.delete().eq('id', op.row.id) : await t.upsert(op.row);
       if (error) throw error;
       if (queue[k] === op) delete queue[k]; // 그새 또 고쳤으면 새 버전은 남겨둔다
-      store('queue', queue);
+      store(QKEY, queue);
     }
   } catch (e) {
     console.warn(e);
@@ -507,6 +532,7 @@ function showEditor() {
   $('#backname').textContent = S.q.trim() ? '검색' : S.view === ALL ? '모든 메모' : S.view === TRASH ? '최근 삭제' : folder(S.view)?.name || '';
   if (!n) return;
   $('#eddate').textContent = longDate(n.updated_at);
+  if (SINGLE) document.title = titleOf(n);
   $('#ed').contentEditable = !n.deleted_at;
   // 다른 기기에서 바뀐 내용 반영. 이 기기에서 치는 중(저장 대기)이면 안 덮는다
   // ponytail: 같은 메모를 두 기기에서 '동시에' 치면 나중 저장이 이김(글자 단위 병합 X). 필요하면 Yjs로
@@ -568,7 +594,7 @@ function setQ(v) {
 const pop = $('#pop');
 function menu(items, x, y) {
   pop.innerHTML = items.map((it, i) => it === '-' ? '<hr>' : it.label === undefined ? `<div class="lbl">${esc(it.title)}</div>` :
-    `<button data-i="${i}" class="${it.danger ? 'danger' : ''}" ${it.disabled ? 'disabled' : ''}><span class="ck">${it.check ? '✓' : ''}</span>${it.html || esc(it.label)}</button>`).join('');
+    `<button data-i="${i}" class="${it.danger ? 'danger' : ''} ${it.icon ? 'ic' : ''}" ${it.disabled ? 'disabled' : ''}>${it.icon ? '' : `<span class="ck">${it.check ? '✓' : ''}</span>`}${it.html || esc(it.label)}</button>`).join('');
   pop.hidden = false;
   const r = pop.getBoundingClientRect();
   pop.style.left = Math.max(6, Math.min(x, innerWidth - r.width - 6)) + 'px';
@@ -591,16 +617,21 @@ function folderPicker(cur, onPick, exclude = []) {
     .map(({ f, depth }) => ({ label: f.name, html: `<span style="padding-left:${depth * 14}px">${esc(f.name)}</span>`, check: cur === f.id, act: () => onPick(f.id) }));
 }
 
-function noteMenu(n, x, y) {
+function noteMenu(n, x, y, full = false) {
   if (n.deleted_at) return menu([
     { label: '복구', act: () => { save(n, { deleted_at: null }, false); render(); } },
     { label: '영구 삭제', danger: true, act: () => { if (confirm('영구 삭제하면 되돌릴 수 없어요.')) { dropNote(n); if (S.open === n.id) S.open = null; render(); } } },
   ], x, y);
   menu([
-    { label: n.pinned ? '메모 고정 해제' : '메모 고정', act: () => { save(n, { pinned: !n.pinned }, false); render(); } },
-    { label: '폴더로 이동…', act: () => menu([{ title: '이동할 폴더' }, ...folderPicker(n.folder_id, id => { save(n, { folder_id: id }, false); render(); })], x, y) },
-    K('메모 복제', '⌘D', () => duplicate(n)),
-    ...(n.id === S.open ? ['-',
+    ...(MULTI ? [I('window', '새로운 윈도우에서 메모 열기', () => openWindow(n)), '-'] : []),
+    I(n.pinned ? 'pinoff' : 'pin', n.pinned ? '메모 고정 해제' : '메모 고정', () => { save(n, { pinned: !n.pinned }, false); render(); }),
+    '-',
+    I('new', '새로운 메모', newNote, '⌘N'),
+    I('dup', '메모 복제', () => duplicate(n), '⌘D'),
+    '-',
+    I('share', '메모 공유', () => shareNote(n)),
+    I('folder', '다음으로 이동', () => menu([{ title: '다음으로 이동' }, ...folderPicker(n.folder_id, id => { save(n, { folder_id: id }, false); render(); })], x, y), '›'),
+    ...(full && n.id === S.open ? ['-',
       K('찾기…', '⌘F', () => openFind(false)),
       { label: '찾기 및 대치…', act: () => openFind(true) },
       { label: '모든 섹션 접기', act: () => foldAll(true) },
@@ -609,15 +640,27 @@ function noteMenu(n, x, y) {
       { label: 'PDF로 내보내기…', act: () => print() },
       { label: 'Markdown으로 내보내기…', act: () => exportMd(n) },
       K('프린트…', '⌘P', () => print())] : []),
-    '-',
-    ...(n.id === S.open && $$('#ed ul.cl li').length ? ['-',
+    ...(full && n.id === S.open && $$('#ed ul.cl li').length ? ['-',
       { label: '모두 체크', act: () => { $$('#ed ul.cl li').forEach(li => li.classList.add('done')); saveEditor(); } },
       { label: '모두 체크 해제', act: () => { $$('#ed ul.cl li.done').forEach(li => li.classList.remove('done')); saveEditor(); } },
       { label: '체크한 항목 하단으로 이동', act: () => { $$('#ed ul.cl').forEach(ul => ul.isConnected && sinkAll(ul)); saveEditor(); } },
       { label: '체크 항목 삭제', act: () => { $$('#ed ul.cl li.done').forEach(li => li.remove()); $$('#ed ul.cl:empty').forEach(ul => ul.remove()); saveEditor(); } }] : []),
     '-',
-    { label: '삭제', danger: true, act: () => deleteNote(n) },
+    I('trash', '삭제', () => deleteNote(n)),
   ], x, y);
+}
+// 아이콘 달린 메뉴 항목 (애플 메모 오른쪽 클릭 메뉴 모양)
+function I(icon, label, act, key = '') {
+  return { label, act, icon: true, html: `${svg(icon)}<span class="sp">${esc(label)}</span><span class="${key === '›' ? 'arr' : ''}" style="opacity:.5">${key}</span>` };
+}
+function openWindow(n) {
+  window.open(location.pathname + '?note=' + n.id, 'note-' + n.id, 'popup,width=560,height=720');
+}
+async function shareNote(n) {
+  const text = textOf(n).join('\n');
+  if (navigator.share) try { return await navigator.share({ title: titleOf(n), text }); } catch (e) { if (e.name === 'AbortError') return; }
+  await navigator.clipboard.writeText(text);
+  alert('메모 내용을 복사했어요. 원하는 곳에 붙여넣으세요.');
 }
 
 function folderMenu(f, x, y) {
@@ -1051,6 +1094,7 @@ $('#nlist').onclick = e => {
   const it = e.target.closest('[data-n]');
   if (it) openNote(it.dataset.n);
 };
+$('#nlist').ondblclick = e => { const n = note(e.target.closest('[data-n]')?.dataset.n); if (n && MULTI) openWindow(n); };
 $('#nlist').oncontextmenu = e => {
   const n = note(e.target.closest('[data-n]')?.dataset.n);
   if (!n) return;
@@ -1061,7 +1105,7 @@ $('#newf').onclick = () => newFolder();
 $('#sbtoggle').onclick = () => { P.nosb = true; savePrefs(); render(); };
 $('#sbshow').onclick = () => { P.nosb = false; savePrefs(); render(); };
 $('#viewmenu').onclick = e => viewMenu(...below(e.currentTarget));
-$('#more').onclick = e => note(S.open) && noteMenu(note(S.open), ...below(e.currentTarget));
+$('#more').onclick = e => note(S.open) && noteMenu(note(S.open), ...below(e.currentTarget), true);
 $('#fmt').onmousedown = $('#check').onmousedown = $('#table').onmousedown = e => e.preventDefault();
 $('#fmt').onclick = e => fmtMenu(...below(e.currentTarget));
 $('#check').onclick = toggleCheck;
@@ -1176,6 +1220,7 @@ document.addEventListener('visibilitychange', () => document.visibilityState ===
 function start() {
   $('#auth').hidden = true;
   $('#app').hidden = false;
+  if (SINGLE) { document.body.classList.add('single'); document.body.dataset.pane = 'editor'; S.open = SINGLE; }
   applyWidths();
   render();
   subscribe();
