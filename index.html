@@ -135,6 +135,31 @@ mark{background:#ffd60a80;color:inherit;border-radius:2px}
 #findbar button{padding:5px 9px;border-radius:7px;background:var(--field)}
 #fcount{color:var(--sub);font-size:12px;min-width:36px}
 body.nocount .f .n{visibility:hidden}
+/* 태그 */
+#ed .tag{color:var(--acc);font-weight:600;background:color-mix(in srgb,var(--acc) 14%,transparent);border-radius:5px;padding:0 3px}
+.tags{display:flex;flex-wrap:wrap;gap:6px;padding:4px 14px 12px}
+.chip{border:1px solid var(--line);border-radius:999px;padding:3px 10px;font-size:13px;color:var(--text);background:var(--bg)}
+.chip.on{background:var(--acc);color:#fff;border-color:var(--acc)}
+/* 첨부 */
+#ed .att{margin:6px 0}
+#ed img[data-att]{display:block;max-width:100%;max-height:520px;border-radius:10px;cursor:zoom-in;background:var(--field);min-width:80px;min-height:60px}
+#ed a.file{display:inline-flex;gap:8px;align-items:center;padding:8px 12px;border:1px solid var(--line);border-radius:10px;background:var(--field);color:var(--text)!important;text-decoration:none;cursor:pointer}
+.it.hasthumb{padding-right:72px}
+.it .thumb{position:absolute;right:14px;top:50%;transform:translateY(-50%);width:48px;height:48px;border-radius:8px;object-fit:cover;background:var(--field)}
+#lightbox{position:fixed;inset:0;z-index:60;background:#000d;display:flex;align-items:center;justify-content:center;cursor:zoom-out}
+#lightbox img{max-width:94vw;max-height:94vh;border-radius:8px}
+/* 스마트 폴더 창 */
+#smartdlg{border:0;border-radius:16px;padding:0;width:min(440px,92vw);background:var(--pop);color:var(--text);box-shadow:0 20px 60px #0005}
+#smartdlg::backdrop{background:#0004}
+#smartdlg form{display:flex;flex-direction:column;gap:12px;padding:20px}
+#smartdlg h3{margin:0;font-size:17px}
+#smartdlg label{font-size:13px;color:var(--sub);display:flex;flex-direction:column;gap:5px}
+#smartdlg input[type=text],#smartdlg select{font:inherit;color:var(--text);background:var(--field);border:0;border-radius:8px;padding:8px 10px}
+#smartdlg .row{display:flex;gap:8px;align-items:center;color:var(--text);font-size:14px;flex-direction:row}
+#smartdlg .btns{display:flex;justify-content:flex-end;gap:8px;margin-top:4px}
+#smartdlg .btns button{padding:8px 16px;border-radius:8px;background:var(--field)}
+#smartdlg .btns .main{background:var(--acc);color:#000;font-weight:600}
+#smartdlg .tagpick{display:flex;flex-wrap:wrap;gap:6px}
 body.single #app{grid-template-columns:1fr!important}
 body.single #folders,body.single #list,body.single .back,body.single #edsearch{display:none!important}
 body:not(.single) .only-single{display:none!important}
@@ -228,6 +253,19 @@ body.lightnote #editor{--bg:#fff;--text:#1d1d1f;--line:#e5e5ea;--field:#ececf0;-
 </form>
 
 <div id="pop" hidden></div>
+<div id="lightbox" hidden><img alt=""></div>
+<dialog id="smartdlg"><form method="dialog">
+  <h3 id="sm-title">새로운 스마트 폴더</h3>
+  <label>이름<input type="text" id="sm-name" required placeholder="예: 할 일 남은 메모"></label>
+  <label>태그<span class="tagpick" id="sm-tags"></span></label>
+  <label class="row"><select id="sm-tagmode"><option value="all">선택한 태그가 모두 있는 메모</option><option value="any">선택한 태그가 하나라도 있는 메모</option></select></label>
+  <label>날짜<span class="row"><select id="sm-datefield"><option value="">상관없음</option><option value="updated">편집일</option><option value="created">생성일</option></select>
+    <select id="sm-days"><option value="1">오늘</option><option value="7" selected>최근 7일</option><option value="30">최근 30일</option><option value="365">최근 1년</option></select></span></label>
+  <label>체크리스트<select id="sm-cl"><option value="">상관없음</option><option value="any">체크리스트가 있는 메모</option><option value="unchecked">체크 안 된 항목이 남은 메모</option></select></label>
+  <label class="row"><input type="checkbox" id="sm-pinned"> 고정된 메모만</label>
+  <label class="row"><input type="checkbox" id="sm-att"> 첨부 파일이 있는 메모만</label>
+  <div class="btns"><button value="cancel" formnovalidate>취소</button><button value="ok" class="main">확인</button></div>
+</form></dialog>
 <svg width="0" height="0" style="position:absolute">
   <symbol id="i-folder" viewBox="0 0 24 24"><path d="M3 7.5A1.5 1.5 0 0 1 4.5 6h4.3l1.8 2h8.9A1.5 1.5 0 0 1 21 9.5v8A1.5 1.5 0 0 1 19.5 19h-15A1.5 1.5 0 0 1 3 17.5z"/><path d="M3 10h18"/></symbol>
   <symbol id="i-all" viewBox="0 0 24 24"><path d="M4 8.5A1.5 1.5 0 0 1 5.5 7h13A1.5 1.5 0 0 1 20 8.5v9a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 17.5z"/><path d="M6 4.5h12"/></symbol>
@@ -240,6 +278,9 @@ body.lightnote #editor{--bg:#fff;--text:#1d1d1f;--line:#e5e5ea;--field:#ececf0;-
   <symbol id="i-more" viewBox="0 0 24 24"><circle cx="5.5" cy="12" r="1.2" fill="currentColor"/><circle cx="12" cy="12" r="1.2" fill="currentColor"/><circle cx="18.5" cy="12" r="1.2" fill="currentColor"/></symbol>
   <symbol id="i-search" viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6"/><path d="m15 15 5 5"/></symbol>
   <symbol id="i-back" viewBox="0 0 24 24"><path d="m15 5-7 7 7 7"/></symbol>
+  <symbol id="i-clip" viewBox="0 0 24 24"><path d="m20 11.5-8.2 8.2a5 5 0 0 1-7.1-7.1l8.5-8.5a3.3 3.3 0 0 1 4.7 4.7l-8.5 8.5a1.7 1.7 0 0 1-2.4-2.4l7.8-7.8"/></symbol>
+  <symbol id="i-smart" viewBox="0 0 24 24"><path d="M3 7.5A1.5 1.5 0 0 1 4.5 6h4.3l1.8 2h8.9A1.5 1.5 0 0 1 21 9.5v8A1.5 1.5 0 0 1 19.5 19h-15A1.5 1.5 0 0 1 3 17.5z"/><circle cx="12" cy="13.5" r="2.2"/><path d="M12 10v1.3M12 15.7V17M8.5 13.5h1.3M14.2 13.5h1.3"/></symbol>
+  <symbol id="i-hash" viewBox="0 0 24 24"><path d="M9 4 7 20M17 4l-2 16M4 9h16M3.5 15h16"/></symbol>
   <symbol id="i-window" viewBox="0 0 24 24"><rect x="3" y="5" width="15" height="12" rx="2"/><path d="M21 9v8a2 2 0 0 1-2 2H8"/><path d="M7.5 11h6M10.5 8v6"/></symbol>
   <symbol id="i-pin" viewBox="0 0 24 24"><path d="M9 4h6l-1 5 3 3H7l3-3z"/><path d="M12 15v5"/></symbol>
   <symbol id="i-pinoff" viewBox="0 0 24 24"><path d="M9 4h6l-1 5 3 3H7l3-3z"/><path d="M12 15v5M4 4l16 16"/></symbol>
@@ -281,7 +322,9 @@ body.lightnote #editor{--bg:#fff;--text:#1d1d1f;--line:#e5e5ea;--field:#ececf0;-
         <span class="cap"><button class="ib newn" title="새 메모 (⌘N)"><svg><use href="#i-new"/></svg></button></span>
         <span class="cap"><button class="ib nb" id="fmt" title="서식"><b style="font-size:15px">가<small>가</small></b></button>
         <button class="ib nb" id="check" title="체크리스트 (⇧⌘L)"><svg><use href="#i-check"/></svg></button>
-        <button class="ib nb" id="table" title="표"><svg><use href="#i-table"/></svg></button></span>
+        <button class="ib nb" id="table" title="표 (⌥⌘T)"><svg><use href="#i-table"/></svg></button>
+        <button class="ib nb" id="attach" title="사진·파일 첨부 (⇧⌘A)"><svg><use href="#i-clip"/></svg></button></span>
+        <input type="file" id="filepick" multiple hidden>
       </div>
       <span class="sp"></span>
       <span class="cap"><button class="ib nb" id="more" title="메모 메뉴"><svg><use href="#i-more"/></svg></button></span>
@@ -321,6 +364,20 @@ const textOf = n => {
   return c.lines;
 };
 const titleOf = n => textOf(n)[0] || '새로운 메모';
+const infoCache = new Map();
+function infoOf(n) {
+  let c = infoCache.get(n.id);
+  if (c && c.html === n.html) return c;
+  const tags = [...new Set([...n.html.matchAll(/<span class="tag"[^>]*>#([^<]+)<\/span>/g)].map(m => m[1].toLowerCase()))];
+  const cl = n.html.includes('class="cl"');
+  let unchecked = false;
+  if (cl) for (const m of n.html.matchAll(/<ul class="cl">([\s\S]*?)<\/ul>/g)) if (/<li(?! class="done")[ >]/.test(m[1])) unchecked = true;
+  const thumb = n.html.match(/<img[^>]*data-thumb="([^"]+)"/)?.[1] || null;
+  const att = thumb !== null || /data-att="/.test(n.html);
+  infoCache.set(n.id, c = { html: n.html, tags, cl, unchecked, att, thumb });
+  return c;
+}
+const tagsOf = n => infoOf(n).tags;
 
 const cfg = window.MEMO_CFG || {};
 const db = cfg.url && supabase.createClient(cfg.url, cfg.key);
@@ -360,8 +417,9 @@ const status = t => $('#status').textContent = t;
 // ---------- 동기화 ----------
 function put(table, row, del = false) {
   queue[table + ':' + row.id] = { table, row: del ? { id: row.id } : { ...row }, del };
-  store(QKEY, queue);
-  cache();
+  store(QKEY, queue); // 저장 대기열은 바로 (글 잃어버리지 않게)
+  clearTimeout(put.c); // 오프라인 사본(메모 전체)은 1초 모아서 한 번에 — 매 글자마다 1MB 쓰면 느림
+  put.c = setTimeout(cache, 1000);
   clearTimeout(put.t);
   put.t = setTimeout(flush, 400);
 }
@@ -469,6 +527,8 @@ function visible() {
   const q = S.q.trim().toLowerCase();
   let ns = S.notes.filter(n => S.view === TRASH && !q ? n.deleted_at : !n.deleted_at);
   if (q) ns = ns.filter(n => textOf(n).join('\n').toLowerCase().includes(q)); // 검색은 모든 폴더에서
+  else if (S.view.startsWith('tag:')) ns = ns.filter(n => tagsOf(n).includes(S.view.slice(4)));
+  else if (folder(S.view)?.smart) ns = ns.filter(n => smartMatch(folder(S.view).smart, n));
   else if (S.view !== ALL && S.view !== TRASH) ns = ns.filter(n => n.folder_id === S.view);
   ns.sort(P.sort === 'title' ? (a, b) => titleOf(a).localeCompare(titleOf(b), 'ko', { numeric: true })
                              : (a, b) => Date.parse(dateOf(b)) - Date.parse(dateOf(a)));
@@ -481,6 +541,7 @@ function hl(s) {
   return e.replace(new RegExp(esc(q).replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi'), m => `<mark>${m}</mark>`);
 }
 
+let tagList = [];
 let justOpened = null, justMade = null; // 방금 펼친 폴더 · 방금 만든 메모 (한 번만 스르륵)
 function renderFolders(live) {
   const count = new Map();
@@ -494,22 +555,24 @@ function renderFolders(live) {
   $('#flist').innerHTML =
     row(ALL, '모든 메모', live.length, 0, 'all') +
     '<div class="slabel">폴더</div>' +
-    tree().map(({ f, depth }) => row(f.id, f.name, count.get(f.id), depth, 'folder', true)).join('') +
-    row(TRASH, '최근 삭제된 항목', S.notes.length - live.length, 0, 'trash');
+    tree().map(({ f, depth }) => row(f.id, f.name, f.smart ? live.filter(n => smartMatch(f.smart, n)).length : count.get(f.id), depth, f.smart ? 'smart' : 'folder', true)).join('') +
+    row(TRASH, '최근 삭제된 항목', S.notes.length - live.length, 0, 'trash') +
+    (tagList.length ? '<div class="slabel">태그</div><div class="tags">' + tagList.map(([t, c]) =>
+      `<button class="chip ${S.view === 'tag:' + t && !S.q ? 'on' : ''}" data-tag="${esc(t)}" title="메모 ${c}개">#${esc(t)}</button>`).join('') + '</div>' : '');
 }
 
 function renderList() {
   const ns = visible();
   const searching = !!S.q.trim();
-  $('#ltitle').textContent = searching ? '검색 결과' : S.view === ALL ? '모든 메모' : S.view === TRASH ? '최근 삭제된 항목' : folder(S.view)?.name;
+  $('#ltitle').textContent = searching ? '검색 결과' : S.view === ALL ? '모든 메모' : S.view === TRASH ? '최근 삭제된 항목' : S.view.startsWith('tag:') ? '#' + S.view.slice(4) : folder(S.view)?.name;
   $('#lcount').textContent = `${ns.length}개의 메모`;
   const showFolder = searching || S.view === ALL;
   const q = S.q.trim().toLowerCase();
   const item = n => {
     const ls = textOf(n);
     const p = (q && ls.slice(1).find(l => l.toLowerCase().includes(q))) || ls[1] || '추가 텍스트 없음';
-    const f = showFolder && folder(n.folder_id);
-    return `<div class="it ${n.id === S.open || sel.has(n.id) ? 'on' : ''} ${n.id === justMade ? 'appear' : ''}" data-n="${n.id}" ${DRAG}><b>${hl(titleOf(n))}</b>` +
+    const f = (showFolder || S.view.startsWith('tag:') || folder(S.view)?.smart) && folder(n.folder_id), th = infoOf(n).thumb;
+    return `<div class="it ${n.id === S.open || sel.has(n.id) ? 'on' : ''} ${n.id === justMade ? 'appear' : ''} ${th ? 'hasthumb' : ''}" data-n="${n.id}" ${DRAG}>${th ? `<img class="thumb" data-p="${esc(th)}" ${urlFor(th) ? `src="${urlFor(th)}"` : ''} alt="">` : ''}<b>${hl(titleOf(n))}</b>` +
       `<div class="l2"><i>${when(dateOf(n))}</i>${hl(p)}</div>${f ? `<div class="l3">${svg('folder')}${esc(f.name)}</div>` : ''}</div>`;
   };
   const pinned = S.view === TRASH && !searching ? [] : ns.filter(n => n.pinned);
@@ -525,11 +588,13 @@ function renderList() {
     }
   } else h += (pinned.length && rest.length ? '<div class="grp">메모</div>' : '') + rest.map(item).join('');
   $('#nlist').innerHTML = h || `<div class="none">${searching ? '결과 없음' : '메모 없음'}</div>`;
+  hydrate($('#nlist'));
 }
 
 function render() {
   const live = S.notes.filter(n => !n.deleted_at);
-  if (S.view !== ALL && S.view !== TRASH && !folder(S.view)) S.view = ALL;
+  tagList = allTags();
+  if (S.view !== ALL && S.view !== TRASH && !folder(S.view) && !(S.view.startsWith('tag:') && tagList.some(([t]) => 'tag:' + t === S.view))) S.view = ALL;
   document.body.classList.toggle('nosb', P.nosb);
   document.body.classList.toggle('nocount', !P.counts);
   document.body.classList.toggle('lightnote', P.lightNote);
@@ -562,6 +627,7 @@ function showEditor() {
     if (shown.id !== n.id) closeFind();
     $('#ed').innerHTML = n.html; shown = { id: n.id, html: n.html };
     applyFolds();
+    hydrate(ed);
   }
 }
 
@@ -573,6 +639,8 @@ function leave() { // 빈 메모는 남기지 않는다 (애플 메모와 같음
 function dropNote(n) {
   S.notes = S.notes.filter(x => x !== n);
   put('notes', n, true);
+  const paths = [...n.html.matchAll(/data-(?:att|thumb)="([^"]+)"/g)].map(m => m[1]).filter(p => !S.notes.some(x => x.html.includes(p)));
+  if (paths.length && db) db.storage.from('attachments').remove(paths).catch(() => {});
 }
 
 function openNote(id) {
@@ -594,7 +662,10 @@ function newNote() {
   if (S.view === TRASH) return;
   setQ('');
   const t = now();
-  const n = { id: crypto.randomUUID(), folder_id: S.view === ALL ? null : S.view, html: `<${P.startStyle}><br></${P.startStyle}>`, pinned: false, deleted_at: null, updated_at: t, created_at: t };
+  const sm = folder(S.view)?.smart, tags = S.view.startsWith('tag:') ? [S.view.slice(4)] : sm?.tags || [];
+  const fid = S.view === ALL || S.view.startsWith('tag:') || sm ? null : S.view;
+  const html = `<${P.startStyle}><br></${P.startStyle}>` + (tags.length ? `<div>${tags.map(tagSpan).join(' ')}</div>` : '');
+  const n = { id: crypto.randomUUID(), folder_id: fid, html, pinned: !!sm?.pinned, deleted_at: null, updated_at: t, created_at: t };
   S.notes.push(n); // 글자를 치기 전엔 서버에 안 올린다
   justMade = n.id;
   openNote(n.id);
@@ -639,7 +710,7 @@ document.addEventListener('keydown', e => e.key === 'Escape' && (pop.hidden = tr
 const below = el => { const r = el.getBoundingClientRect(); return [r.left, r.bottom + 4]; };
 
 function folderPicker(cur, onPick, exclude = []) {
-  return tree(null, 0, true).filter(({ f }) => !exclude.includes(f.id))
+  return tree(null, 0, true).filter(({ f }) => !exclude.includes(f.id) && !f.smart)
     .map(({ f, depth }) => ({ label: f.name, html: `<span style="padding-left:${depth * 14}px">${esc(f.name)}</span>`, check: cur === f.id, act: () => onPick(f.id) }));
 }
 
@@ -690,6 +761,12 @@ async function shareNote(n) {
 }
 
 function folderMenu(f, x, y) {
+  if (f.smart) return menu([
+    { label: '스마트 폴더 편집…', act: () => smartDialog(f) },
+    { label: '이름 변경', act: () => { const name = prompt('폴더 이름', f.name); if (name?.trim()) { f.name = name.trim(); f.updated_at = now(); put('folders', f); render(); } } },
+    '-',
+    { label: '스마트 폴더 삭제', danger: true, act: () => deleteFolder(f) },
+  ], x, y);
   menu([
     { label: '새로운 하위 폴더', act: () => newFolder(f.id) },
     { label: '이름 변경', act: () => { const name = prompt('폴더 이름', f.name); if (name?.trim()) { f.name = name.trim(); f.updated_at = now(); put('folders', f); render(); } } },
@@ -772,8 +849,11 @@ function fmtMenu(x, y) {
 // ---------- 편집 명령 ----------
 const ed = $('#ed');
 // 접힌 섹션을 숨기는 data-fh 표시는 화면용이라 저장에서 뺀다 (접힘 자체는 제목의 class="fold"로 저장)
-const edHTML = () => ed.innerHTML.replace(/ data-fh=""/g, '');
-const saveEditor = (quiet = false) => { const n = note(S.open), h = edHTML(); if (n && n.html !== h) { save(n, { html: h }); shown.html = h; if (!quiet) render(); } };
+const edHTML = () => ed.innerHTML.replace(/ data-fh=""/g, '').replace(/(<img\b[^>]*?) src="[^"]*"/g, '$1');
+// 글 칠 때 목록(메모 1000개)은 매 글자마다 다시 그리지 않고, 손을 멈춘 뒤 0.12초에 한 번
+let renderSoon;
+const laterRender = () => { clearTimeout(renderSoon); renderSoon = setTimeout(render, 120); };
+const saveEditor = (quiet = false) => { const n = note(S.open), h = edHTML(); if (n && n.html !== h) { save(n, { html: h }); shown.html = h; if (!quiet) laterRender(); } };
 const cmd = (c, v) => { document.execCommand(c, false, v); saveEditor(); };
 const block = tag => cmd('formatBlock', tag);
 const curList = () => getSelection().anchorNode?.parentElement?.closest('#ed ul');
@@ -848,7 +928,7 @@ function toggleCheck() {
 }
 
 ed.oninput = e => {
-  if (!e.isComposing) { smartList(e); scrub(); }
+  if (!e.isComposing) { smartList(e); scrub(); autoTag(e) ; suggestTags(); }
   saveEditor(e.isComposing);
   if (!e.isComposing && !$('#findbar').hidden) runFind();
 };
@@ -883,7 +963,7 @@ function smartList(e) {
   else if (m[1] === '*' || m[1] === '•') list('');
   else listCmd('insertOrderedList');
 }
-ed.addEventListener('compositionend', () => saveEditor());
+ed.addEventListener('compositionend', () => { saveEditor(); suggestTags(); });
 
 // 위·아래 방향키는 앱이 직접 처리한다.
 // 크롬 확장 프로그램 중에 ↑↓·엔터를 가로채는 게 있어 커서가 위아래로 안 움직였다 (←→는 정상).
@@ -932,10 +1012,9 @@ ed.addEventListener('keyup', e => {
 });
 ed.onpaste = e => {
   const html = e.clipboardData.getData('text/html'), text = e.clipboardData.getData('text/plain');
-  if (!html && !text) { // 사진만 있는 경우 (사진은 아직 미지원: 메모가 수 MB로 불어나 동기화가 느려진다)
-    if ([...e.clipboardData.items].some(i => i.kind === 'file')) { e.preventDefault(); alert('사진 붙여넣기는 아직 지원하지 않아요.'); }
-    return;
-  }
+  const files = [...e.clipboardData.files];
+  if (files.length && !text.trim()) { e.preventDefault(); return addFiles(files); } // 사진·파일 → 첨부
+  if (!html && !text) return;
   e.preventDefault();
   if (html) return cmd('insertHTML', cleanHTML(html));
   if (!text.includes('\n')) return cmd('insertText', text);
@@ -1202,6 +1281,191 @@ function exportMd(n) {
   setTimeout(() => URL.revokeObjectURL(a.href), 1000);
 }
 
+// ---------- 태그 (애플 메모처럼: #단어 다음 띄어쓰기를 하면 태그가 된다) ----------
+const tagSpan = t => `<span class="tag" contenteditable="false">#${esc(t)}</span>`;
+const TAG_RE = /(^|[\s ])#([\p{L}\p{N}_\-]*\p{L}[\p{L}\p{N}_\-]*)[\s ]$/u;
+function allTags() {
+  const m = new Map();
+  for (const n of S.notes) if (!n.deleted_at) for (const t of tagsOf(n)) m.set(t, (m.get(t) || 0) + 1);
+  return [...m].sort((a, b) => a[0].localeCompare(b[0], 'ko', { numeric: true }));
+}
+function caretText() {
+  const s = getSelection(), t = s.anchorNode;
+  if (!s.isCollapsed || !t || t.nodeType !== 3 || t.parentElement.closest('.tag,a,pre,code')) return null;
+  return { s, t, before: t.data.slice(0, s.anchorOffset) };
+}
+function makeTag(t, start, end, name) { // 글자 t의 [start,end) 를 태그로 바꾸고 커서를 태그 뒤로
+  const r = document.createRange();
+  r.setStart(t, start); r.setEnd(t, end);
+  r.deleteContents();
+  const box = document.createElement('span');
+  box.innerHTML = tagSpan(name);
+  const span = box.firstChild;
+  r.insertNode(span);
+  let after = span.nextSibling;
+  if (!after || after.nodeType !== 3 || !/^[\s ]/.test(after.data)) { after = document.createTextNode(' '); span.after(after); }
+  getSelection().collapse(after, 1);
+}
+function autoTag(e) {
+  if (e.inputType !== 'insertText' || !/^[  ]$/.test(e.data || '')) return false;
+  const c = caretText();
+  const m = c?.before.match(TAG_RE);
+  if (!m) return false;
+  const start = c.before.length - m[2].length - 2;
+  makeTag(c.t, start, start + m[2].length + 1, m[2]);
+  return true;
+}
+// '#글자'를 치는 동안 기존 태그를 골라 넣을 수 있게 제안
+let tagSuggesting = false;
+function suggestTags() {
+  const c = caretText();
+  const m = c?.before.match(/(^|[\s ])#([\p{L}\p{N}_\-]*)$/u);
+  const hits = m ? allTags().map(([t]) => t).filter(t => t.startsWith(m[2].toLowerCase()) && t !== m[2].toLowerCase()).slice(0, 6) : [];
+  if (!hits.length) { if (tagSuggesting) { pop.hidden = true; tagSuggesting = false; } return; }
+  const r = document.createRange();
+  r.setStart(c.t, c.before.length);
+  const box = r.getClientRects()[0] || c.t.parentElement.getBoundingClientRect();
+  const start = c.before.length - m[2].length - 1;
+  menu([{ title: '태그' }, ...hits.map(t => ({ label: '#' + t, act: () => { makeTag(c.t, start, c.before.length, t); tagSuggesting = false; saveEditor(); } }))], box.left, box.bottom + 4);
+  tagSuggesting = true;
+}
+function tagMenu(t, x, y) {
+  menu([
+    { label: `#${t} 태그가 있는 스마트 폴더 만들기`, act: () => smartDialog(null, { tags: [t] }) },
+    { label: '태그 이름 변경…', act: () => { const nt = prompt('새 태그 이름 (# 없이)', t)?.trim().replace(/^#/, ''); if (nt && /^[\p{L}\p{N}_\-]+$/u.test(nt) && nt !== t) retag(t, nt); } },
+    '-',
+    { label: '태그 삭제', danger: true, act: () => { if (confirm(`모든 메모에서 #${t} 태그를 지울까요? 메모 글자는 남아요.`)) retag(t, null); } },
+  ], x, y);
+}
+function retag(from, to) { // 모든 메모에서 태그 이름 바꾸기 / 지우기 (지우면 평범한 글자로)
+  for (const n of S.notes) {
+    if (!tagsOf(n).includes(from)) continue;
+    const html = n.html.replace(/<span class="tag"[^>]*>#([^<]+)<\/span>/g, (all, name) =>
+      name.toLowerCase() !== from ? all : to ? tagSpan(to) : '#' + name);
+    save(n, { html }, false);
+  }
+  if (S.view === 'tag:' + from) S.view = to ? 'tag:' + to : ALL;
+  shown = {};
+  render();
+}
+
+// ---------- 스마트 폴더: 조건에 맞는 메모를 자동으로 모아 보기 ----------
+function smartMatch(c, n) {
+  const i = infoOf(n);
+  if (c.tags?.length && !(c.tagMode === 'any' ? c.tags.some(t => i.tags.includes(t)) : c.tags.every(t => i.tags.includes(t)))) return false;
+  if (c.dateField && Date.now() - Date.parse(c.dateField === 'created' ? n.created_at || n.updated_at : n.updated_at) > c.days * 864e5) return false;
+  if (c.checklist === 'any' && !i.cl) return false;
+  if (c.checklist === 'unchecked' && !i.unchecked) return false;
+  if (c.pinned && !n.pinned) return false;
+  if (c.attachments && !i.att) return false;
+  return true;
+}
+function smartDialog(f = null, preset = {}) {
+  const c = { tagMode: 'all', days: 7, ...(f?.smart || preset) }, dlg = $('#smartdlg'), picked = new Set(c.tags || []);
+  $('#sm-title').textContent = f ? '스마트 폴더 편집' : '새로운 스마트 폴더';
+  $('#sm-name').value = f?.name || (c.tags?.length ? c.tags.map(t => '#' + t).join(' ') : '');
+  const tags = allTags().map(([t]) => t);
+  $('#sm-tags').innerHTML = tags.length ? tags.map(t => `<button type="button" class="chip ${picked.has(t) ? 'on' : ''}" data-t="${esc(t)}">#${esc(t)}</button>`).join('') : '<span style="color:var(--sub)">아직 태그가 없어요. 메모에 #단어 를 적으면 생겨요.</span>';
+  $('#sm-tags').onclick = e => { const b = e.target.closest('[data-t]'); if (!b) return; picked.has(b.dataset.t) ? picked.delete(b.dataset.t) : picked.add(b.dataset.t); b.classList.toggle('on'); };
+  $('#sm-tagmode').value = c.tagMode;
+  $('#sm-datefield').value = c.dateField || '';
+  $('#sm-days').value = String(c.days || 7);
+  $('#sm-cl').value = c.checklist || '';
+  $('#sm-pinned').checked = !!c.pinned;
+  $('#sm-att').checked = !!c.attachments;
+  dlg.onclose = () => {
+    if (dlg.returnValue !== 'ok' || !$('#sm-name').value.trim()) return;
+    const smart = { tags: [...picked], tagMode: $('#sm-tagmode').value, dateField: $('#sm-datefield').value || null, days: +$('#sm-days').value,
+      checklist: $('#sm-cl').value || null, pinned: $('#sm-pinned').checked, attachments: $('#sm-att').checked };
+    if (f) { Object.assign(f, { name: $('#sm-name').value.trim(), smart, updated_at: now() }); put('folders', f); }
+    else { f = { id: crypto.randomUUID(), name: $('#sm-name').value.trim(), parent_id: null, position: null, smart, updated_at: now() }; S.folders.push(f); placeFolder(f, null, null); }
+    S.view = f.id; store('view', S.view); setQ('');
+    render();
+    goPane('list');
+  };
+  dlg.returnValue = '';
+  dlg.showModal();
+}
+
+// ---------- 사진·파일 첨부 ----------
+// 사진은 Supabase 저장소에 따로 두고, 메모에는 경로(data-att)만 적는다 → 메모가 무거워지지 않음
+// 목록에는 작은 미리보기(data-thumb)만, 원본은 메모를 열 때만 받는다
+let uid = null;
+const urls = load('urls', {}); // 경로 → [임시 주소, 만료 시각] (7일짜리, 하루 남으면 새로 받음)
+const urlFor = p => urls[p] && urls[p][1] - Date.now() > 864e5 ? urls[p][0] : null;
+const localUrls = new Map(); // 올리는 중인 사진은 내 기기 사본으로 먼저 보여줌
+let hydrating = null;
+async function hydrate(root) {
+  const els = [...root.querySelectorAll('img[data-att], img.thumb[data-p]')];
+  for (const el of els) { const p = el.dataset.p || el.dataset.att, u = localUrls.get(p) || urlFor(p); if (u && el.getAttribute('src') !== u) el.src = u; }
+  const need = [...new Set(els.filter(el => !el.getAttribute('src')).map(el => el.dataset.p || el.dataset.att))];
+  if (!need.length || !db) return;
+  const { data } = await db.storage.from('attachments').createSignedUrls(need, 7 * 864e5 / 1000);
+  for (const d of data || []) if (d.signedUrl) urls[d.path] = [d.signedUrl, Date.now() + 7 * 864e5];
+  store('urls', urls);
+  for (const el of root.querySelectorAll('img[data-att], img.thumb[data-p]')) { const u = urlFor(el.dataset.p || el.dataset.att); if (u && !el.getAttribute('src')) el.src = u; }
+}
+// 큰 사진은 줄여서 올린다 (긴 쪽 2048px, JPEG) + 목록용 미리보기 (320px)
+async function shrink(file, max, q = .85) {
+  const img = await createImageBitmap(file);
+  const k = Math.min(1, max / Math.max(img.width, img.height));
+  const cv = Object.assign(document.createElement('canvas'), { width: Math.round(img.width * k), height: Math.round(img.height * k) });
+  cv.getContext('2d').drawImage(img, 0, 0, cv.width, cv.height);
+  return new Promise(r => cv.toBlob(r, 'image/jpeg', q));
+}
+const fmtSize = b => b > 1e6 ? (b / 1e6).toFixed(1) + 'MB' : Math.max(1, Math.round(b / 1e3)) + 'KB';
+async function addFiles(files) {
+  const n = note(S.open);
+  if (!n || !db || !uid) return alert('메모를 연 상태에서 인터넷이 연결돼 있어야 첨부할 수 있어요.');
+  ed.focus();
+  for (const file of files) {
+    const id = crypto.randomUUID(), base = `${uid}/${n.id}/${id}`, isImg = /^image\/(png|jpe?g|gif|webp|heic|heif|avif)$/i.test(file.type);
+    if (!isImg && file.size > 50e6) { alert(`${file.name}: 50MB보다 큰 파일은 첨부할 수 없어요.`); continue; }
+    let body = file, thumb = null, path = `${base}.${(file.name.split('.').pop() || 'bin').toLowerCase().slice(0, 8)}`;
+    if (isImg && !/gif/i.test(file.type)) {
+      try { body = await shrink(file, 2048); thumb = await shrink(file, 320, .8); path = `${base}.jpg`; } catch { /* 줄이지 못하면 원본 그대로 */ }
+    }
+    const tpath = thumb ? `${base}.t.jpg` : null;
+    if (isImg) localUrls.set(path, URL.createObjectURL(body));
+    if (thumb) localUrls.set(tpath, URL.createObjectURL(thumb));
+    document.execCommand('insertHTML', false, isImg
+      ? `<div class="att"><img data-att="${path}"${tpath ? ` data-thumb="${tpath}"` : ''} alt=""></div><div><br></div>`
+      : `<div class="att"><a class="file" contenteditable="false" data-att="${path}" data-name="${esc(file.name)}">📎 ${esc(file.name)} · ${fmtSize(file.size)}</a></div><div><br></div>`);
+    hydrate(ed);
+    saveEditor();
+    status('첨부 올리는 중…');
+    const up = await db.storage.from('attachments').upload(path, body, { contentType: body.type || file.type || 'application/octet-stream' });
+    if (thumb) await db.storage.from('attachments').upload(tpath, thumb, { contentType: 'image/jpeg' });
+    status(up.error ? '첨부 실패: ' + up.error.message : '');
+    if (up.error) { ed.querySelectorAll(`[data-att="${path}"]`).forEach(x => x.closest('.att')?.remove() || x.remove()); saveEditor(); alert(`${file.name} 올리기 실패: ${up.error.message}`); }
+  }
+}
+async function openAttachment(path) {
+  const u = localUrls.get(path) || urlFor(path) || (await db.storage.from('attachments').createSignedUrl(path, 3600)).data?.signedUrl;
+  if (u) window.open(u, '_blank', 'noopener');
+}
+$('#attach').onmousedown = e => e.preventDefault();
+$('#attach').onclick = () => $('#filepick').click();
+$('#filepick').onchange = e => { const f = [...e.target.files]; e.target.value = ''; if (f.length) addFiles(f); };
+ed.addEventListener('dragover', e => { if (e.dataTransfer?.types.includes('Files')) e.preventDefault(); });
+ed.addEventListener('drop', e => {
+  const files = [...(e.dataTransfer?.files || [])];
+  if (!files.length) return;
+  e.preventDefault();
+  const r = document.caretRangeFromPoint?.(e.clientX, e.clientY);
+  if (r) { getSelection().removeAllRanges(); getSelection().addRange(r); }
+  addFiles(files);
+});
+// 사진 누르면 크게 보기, 파일 누르면 열기
+ed.addEventListener('click', e => {
+  const img = e.target.closest('img[data-att]');
+  if (img) { $('#lightbox img').src = img.src; $('#lightbox').hidden = false; return; }
+  const f = e.target.closest('a.file[data-att]');
+  if (f) { e.preventDefault(); openAttachment(f.dataset.att); }
+});
+$('#lightbox').onclick = () => { $('#lightbox').hidden = true; };
+document.addEventListener('keydown', e => { if (e.key === 'Escape') $('#lightbox').hidden = true; });
+
 // ---------- 폴더 ----------
 function newFolder(parent_id = null) {
   const name = prompt('새로운 폴더 이름');
@@ -1226,6 +1490,10 @@ function placeFolder(f, parent, beforeId) {
 }
 
 function deleteFolder(f) {
+  if (f.smart) { // 스마트 폴더는 모아 보기만 하므로 메모는 그대로
+    if (!confirm(`'${f.name}' 스마트 폴더를 삭제할까요? 메모는 지워지지 않아요.`)) return;
+    S.folders = S.folders.filter(x => x !== f); put('folders', f, true); return render();
+  }
   const ids = subtree(f.id);
   if (!confirm(`'${f.name}' 폴더${ids.length > 1 ? `와 하위 폴더 ${ids.length - 1}개` : ''}를 삭제할까요? 안의 메모는 '최근 삭제된 항목'으로 갑니다.`)) return;
   for (const n of S.notes.filter(n => ids.includes(n.folder_id) && !n.deleted_at)) save(n, { deleted_at: now() }, false);
@@ -1236,6 +1504,8 @@ function deleteFolder(f) {
 
 // ---------- 이벤트 ----------
 $('#flist').onclick = e => {
+  const chip = e.target.closest('[data-tag]');
+  if (chip) { S.view = 'tag:' + chip.dataset.tag; store('view', S.view); setQ(''); render(); $('#nlist').scrollTop = 0; return goPane('list'); }
   const tw = e.target.closest('[data-tw]');
   if (tw) { // ⌄ › 접기/펴기
     if (closed.has(tw.dataset.tw)) { closed.delete(tw.dataset.tw); justOpened = tw.dataset.tw; } else closed.add(tw.dataset.tw);
@@ -1253,7 +1523,9 @@ $('#flist').onclick = e => {
 $('#flist').oncontextmenu = e => { // 오른쪽 클릭 / 폰에선 길게 누르기
   const f = folder(e.target.closest('[data-f]')?.dataset.f);
   e.preventDefault();
-  f ? folderMenu(f, e.clientX, e.clientY) : menu([{ label: '새로운 폴더', act: () => newFolder() }], e.clientX, e.clientY);
+  const chip = e.target.closest('[data-tag]');
+  if (chip) return tagMenu(chip.dataset.tag, e.clientX, e.clientY);
+  f ? folderMenu(f, e.clientX, e.clientY) : menu([{ label: '새로운 폴더', act: () => newFolder() }, { label: '새로운 스마트 폴더…', act: () => smartDialog() }], e.clientX, e.clientY);
 };
 $('#nlist').onclick = e => {
   if (e.target.closest('[data-pin]')) { P.pinOpen = !P.pinOpen; savePrefs(); return render(); }
@@ -1362,7 +1634,7 @@ $('#flist').onkeydown = e => {
 // 목록·폴더를 누르면 키보드도 그쪽으로 (편집기에서 빠져나옴)
 $('#nlist').addEventListener('mousedown', e => { if (!e.target.closest('input')) setTimeout(() => $('#nlist').focus({ preventScroll: true })); });
 $('#flist').addEventListener('mousedown', () => setTimeout(() => $('#flist').focus({ preventScroll: true })));
-$('#newf').onclick = () => newFolder();
+$('#newf').onclick = e => menu([{ label: '새로운 폴더', act: () => newFolder() }, { label: '새로운 스마트 폴더…', act: () => smartDialog() }], ...below(e.currentTarget));
 $('#sbtoggle').onclick = () => { P.nosb = true; savePrefs(); render(); };
 $('#sbshow').onclick = () => { P.nosb = false; savePrefs(); render(); };
 $('#viewmenu').onclick = e => viewMenu(...below(e.currentTarget));
@@ -1470,6 +1742,7 @@ document.addEventListener('keydown', e => {
   if (alt && k === 'c') return go(copyStyle);
   if (alt && k === 'v') return go(pasteStyle);
   if (alt && k === 't') return go(() => $('#table').click());
+  if (sh && k === 'a') return go(() => $('#filepick').click());
   // 크롬은 ⌘+ ⌘-를 창 확대·축소로 먼저 가져가서 앱까지 오지 않는다 → ⌥⌘+ ⌥⌘- 로도 받는다
   if (alt && c === 'Equal') return go(() => resizeText(1.15));
   if (alt && c === 'Minus') return go(() => resizeText(1 / 1.15));
@@ -1567,10 +1840,11 @@ function dropZone(e) {
   const row = e.target.closest('[data-f]');
   if (!drag || !row) return null;
   const id = row.dataset.f;
-  if (drag.type === 'note') return id === ALL ? null : { row, id, zone: 'in' };
+  if (drag.type === 'note') return id === ALL || folder(id)?.smart ? null : { row, id, zone: 'in' };
   if (id === ALL || id === TRASH || subtree(drag.id).includes(id)) return null;
   const r = row.getBoundingClientRect(), y = (e.clientY - r.top) / r.height;
-  return { row, id, zone: y < .28 ? 'before' : y > .72 ? 'after' : 'in' };
+  const zone = y < .28 ? 'before' : y > .72 ? 'after' : 'in';
+  return { row, id, zone: zone === 'in' && (folder(id)?.smart || folder(drag.id)?.smart) ? 'after' : zone };
 }
 $('#flist').ondragover = e => {
   const z = dropZone(e);
@@ -1619,11 +1893,12 @@ addEventListener('online', pull);
 document.addEventListener('visibilitychange', () => document.visibilityState === 'visible' && db && pull());
 
 // ---------- 로그인 ----------
-const VERSION = '10.20-h';
+const VERSION = '10.21-a';
 // 메인 창(폴더·목록이 있는 창)을 열거나, 이미 열려 있으면 앞으로
 function openMain() { window.open(location.pathname, 'yun-main'); }
 function start() {
   if (!SINGLE) window.name = 'yun-main';
+  db?.auth.getSession().then(({ data }) => { uid = data.session?.user.id || null; });
   $('#ver').textContent = 'v' + VERSION;
   $('#auth').hidden = true;
   $('#app').hidden = false;

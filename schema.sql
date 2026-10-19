@@ -33,3 +33,12 @@ alter publication supabase_realtime add table folders, notes;
 alter table folders add column if not exists parent_id uuid;
 alter table folders add column if not exists position double precision;
 alter table notes add column if not exists created_at timestamptz not null default now();
+
+-- 추가 (2026-10-20): 스마트 폴더 조건, 사진·파일 첨부 저장소 (본인 폴더만 읽고 쓰기)
+alter table folders add column if not exists smart jsonb;
+insert into storage.buckets (id, name, public, file_size_limit)
+  values ('attachments', 'attachments', false, 52428800) on conflict (id) do nothing;
+drop policy if exists "att own" on storage.objects;
+create policy "att own" on storage.objects for all to authenticated
+  using (bucket_id = 'attachments' and (storage.foldername(name))[1] = auth.uid()::text)
+  with check (bucket_id = 'attachments' and (storage.foldername(name))[1] = auth.uid()::text);
