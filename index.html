@@ -241,7 +241,7 @@ body.lightnote #editor{--bg:#fff;--text:#1d1d1f;--line:#e5e5ea;--field:#ececf0;-
     </div>
     <h1 class="big">폴더</h1>
     <div class="scroll" id="flist"></div>
-    <div class="foot"><span id="status" class="sp"></span><button id="logout">로그아웃</button></div>
+    <div class="foot"><span id="status" class="sp"></span><span id="ver"></span><button id="logout">로그아웃</button></div>
     <div class="rs" data-v="--sw"></div>
   </section>
 
@@ -1133,12 +1133,21 @@ function goPane(p) {
   else history.go(LV[p] - LV[cur]);
 }
 addEventListener('popstate', e => showPane(e.state?.pane || 'folders'));
-function initHistory() { // 처음 열 때: 폴더 → (지금 화면) 순서로 기록을 깔아 둔다
-  if (!stacked()) return;
+// 크롬(안드로이드)은 사용자가 화면을 누르기 전에 쌓은 기록을 뒤로가기에서 건너뛴다.
+// 그래서 처음 화면을 누르는 순간(손가락을 뗄 때)에 폴더 → (지금 화면) 순서로 기록을 깐다
+let histReady = false;
+function initHistory() {
+  if (stacked()) history.replaceState({ pane: document.body.dataset.pane }, '');
+}
+function buildHistory() {
+  if (histReady || !stacked()) return;
+  histReady = true;
   const p = document.body.dataset.pane;
   history.replaceState({ pane: 'folders' }, '');
   for (const x of ['list', 'editor'].slice(0, LV[p])) history.pushState({ pane: x }, '');
 }
+addEventListener('pointerup', buildHistory, true);
+addEventListener('keydown', buildHistory, true);
 // 단축키 (애플 메모와 같은 키)
 document.addEventListener('keydown', e => {
   const inEd = document.activeElement === ed || ed.contains(document.activeElement);
@@ -1237,7 +1246,9 @@ addEventListener('online', pull);
 document.addEventListener('visibilitychange', () => document.visibilityState === 'visible' && db && pull());
 
 // ---------- 로그인 ----------
+const VERSION = '10.20-a';
 function start() {
+  $('#ver').textContent = 'v' + VERSION;
   $('#auth').hidden = true;
   $('#app').hidden = false;
   if (SINGLE) { document.body.classList.add('single'); document.body.dataset.pane = 'editor'; S.open = SINGLE; }
