@@ -756,8 +756,8 @@ function fmtMenu(x, y) {
     K('기준선…', '', () => sub('기준선', [K('위 첨자', '⌃⌘=', () => cmd('superscript')), K('아래 첨자', '⌃⌘-', () => cmd('subscript'))])(x, y)),
     K('변형…', '', () => sub('변형', [K('대문자로 만들기', '', () => changeCase(t => t.toUpperCase())), K('소문자로 만들기', '', () => changeCase(t => t.toLowerCase())), K('대문자로 시작', '', () => changeCase(t => t.toLowerCase().replace(/(^|\s)\S/g, c => c.toUpperCase())))])(x, y)),
     '-',
-    K('크게', '⌘+', () => resizeText(1.15)),
-    K('작게', '⌘-', () => resizeText(1 / 1.15)),
+    K('크게', '⌥⌘+', () => resizeText(1.15)),
+    K('작게', '⌥⌘-', () => resizeText(1 / 1.15)),
     K('스타일 복사하기', '⌥⌘C', copyStyle),
     K('스타일 붙여넣기', '⌥⌘V', pasteStyle),
     '-',
@@ -1468,6 +1468,9 @@ document.addEventListener('keydown', e => {
   if (alt && k === 'c') return go(copyStyle);
   if (alt && k === 'v') return go(pasteStyle);
   if (alt && k === 't') return go(() => $('#table').click());
+  // 크롬은 ⌘+ ⌘-를 창 확대·축소로 먼저 가져가서 앱까지 오지 않는다 → ⌥⌘+ ⌥⌘- 로도 받는다
+  if (alt && c === 'Equal') return go(() => resizeText(1.15));
+  if (alt && c === 'Minus') return go(() => resizeText(1 / 1.15));
   if (alt && (c === 'ArrowLeft' || c === 'ArrowRight')) return go(() => sh ? foldAll(c === 'ArrowLeft') : foldHere(c === 'ArrowLeft'));
   if (c === 'Quote') return go(quote);
   if (alt) return;
@@ -1614,7 +1617,7 @@ addEventListener('online', pull);
 document.addEventListener('visibilitychange', () => document.visibilityState === 'visible' && db && pull());
 
 // ---------- 로그인 ----------
-const VERSION = '10.20-f';
+const VERSION = '10.20-g';
 function start() {
   $('#ver').textContent = 'v' + VERSION;
   $('#auth').hidden = true;
