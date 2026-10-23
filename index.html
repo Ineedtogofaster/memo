@@ -117,7 +117,9 @@ mark{background:#ffd60a80;color:inherit;border-radius:2px}
 #ed ul.dash>li::before{content:"–";position:absolute;margin-left:-16px}
 #ed table{border-collapse:collapse;margin:8px 0}
 #ed td{border:1px solid var(--line);padding:6px 10px;min-width:70px;vertical-align:top}
-#ed a{color:var(--acc);cursor:pointer}
+:root{--link:#0a66d8}
+@media (prefers-color-scheme:dark){:root{--link:#4aa3ff}}
+#ed a{color:var(--link);text-decoration:underline;text-underline-offset:2px;cursor:pointer}
 #ed ul ul,#ed ol ol,#ed ul ol,#ed ol ul{margin:0}
 #ed ul.cl ul.cl{padding-left:26px}
 #ed blockquote{margin:4px 0;padding:2px 0 2px 14px;border-left:3px solid var(--line)}
@@ -627,6 +629,7 @@ function showEditor() {
     if (shown.id !== n.id) closeFind();
     $('#ed').innerHTML = n.html; shown = { id: n.id, html: n.html };
     applyFolds();
+    linkify(ed);
     hydrate(ed);
   }
 }
@@ -928,7 +931,7 @@ function toggleCheck() {
 }
 
 ed.oninput = e => {
-  if (!e.isComposing) { smartList(e); scrub(); autoTag(e) ; suggestTags(); }
+  if (!e.isComposing) { smartList(e); scrub(); autoTag(e) || autoLink(e); suggestTags(); }
   saveEditor(e.isComposing);
   if (!e.isComposing && !$('#findbar').hidden) runFind();
 };
@@ -1017,8 +1020,8 @@ ed.onpaste = e => {
   if (!html && !text) return;
   e.preventDefault();
   if (html) return cmd('insertHTML', cleanHTML(html));
-  if (!text.includes('\n')) return cmd('insertText', text);
-  cmd('insertHTML', text.replace(/\r/g, '').split('\n').map(l => `<div>${esc(l) || '<br>'}</div>`).join(''));
+  if (!text.includes('\n')) return URL_RE.test(text) ? cmd('insertHTML', linkText(text)) : cmd('insertText', text);
+  cmd('insertHTML', text.replace(/\r/g, '').split('\n').map(l => `<div>${linkText(l) || '<br>'}</div>`).join(''));
 };
 // 다른 곳에서 복사한 HTML 정리: 허용한 태그만, 속성은 링크 주소와 체크리스트 표시만
 const PASTE_TAGS = { B: 'b', STRONG: 'b', I: 'i', EM: 'i', U: 'u', S: 's', STRIKE: 's', DEL: 's', A: 'a', BR: 'br', UL: 'ul', OL: 'ol', LI: 'li',
@@ -1029,7 +1032,8 @@ function cleanHTML(html) {
     if (c.nodeType === 3) {
       if (inPre) return esc(c.data);
       if (/\n/.test(c.data) && !c.data.trim()) return ''; // 태그 사이 줄바꿈·들여쓰기
-      return esc(c.data.replace(/\s+/g, ' '));
+      const t = c.data.replace(/\s+/g, ' ');
+      return c.parentElement?.closest('a') ? esc(t) : linkText(t); // 글자 속 주소는 링크로
     }
     if (c.nodeType !== 1 || /^(SCRIPT|STYLE|META|LINK|TITLE|HEAD|IMG|SVG|IFRAME|OBJECT|VIDEO|AUDIO|CANVAS|INPUT|BUTTON|SELECT|TEXTAREA)$/.test(c.tagName)) return '';
     const t = PASTE_TAGS[c.tagName], inner = walk(c, inPre || c.tagName === 'PRE');
@@ -1051,12 +1055,77 @@ ed.onclick = e => {
   const a = e.target.closest('a[href]');
   if (a && /^(https?:|mailto:|tel:)/i.test(a.getAttribute('href'))) { e.preventDefault(); window.open(a.href, '_blank', 'noopener'); }
 };
-ed.oncontextmenu = e => { // 표 안에서 오른쪽 클릭(폰은 길게 누르기) → 표 편집. 그 밖에선 맞춤법 제안이 있는 기본 메뉴
+ed.oncontextmenu = e => { // 오른쪽 클릭(폰은 길게 누르기): 링크 위 → 링크 메뉴, 글자 선택 → 링크 만들기, 표 → 표 편집, 그 밖엔 맞춤법 제안이 있는 기본 메뉴
+  if (!ed.isContentEditable) return;
+  const a = e.target.closest('a[href]'), s = getSelection(), picked = s.toString().trim();
+  if (a) { e.preventDefault(); return linkMenu(a, e.clientX, e.clientY); }
+  if (picked && s.rangeCount && ed.contains(s.anchorNode)) {
+    e.preventDefault();
+    return menu([
+      K('링크 만들기', '⌘K', () => linkSelection(picked)),
+      '-',
+      K('잘라내기', '⌘X', () => document.execCommand('cut')),
+      K('복사하기', '⌘C', () => document.execCommand('copy')),
+      K('강조', '⇧⌘E', () => highlight()),
+    ], e.clientX, e.clientY);
+  }
   const td = e.target.closest('td');
-  if (!td || !ed.isContentEditable) return;
+  if (!td) return;
   e.preventDefault();
   tableMenu(td, e.clientX, e.clientY);
 };
+
+// ---------- 링크: 주소는 자동으로 링크, 선택한 글자는 오른쪽 클릭으로 링크 ----------
+const URL_RE = /\b(?:https?:\/\/|www\.)[^\s<>"]+[^\s<>".,;:!?'")\]]/i;
+const URL_RE_G = new RegExp(URL_RE.source, 'gi');
+const hrefOf = u => /^https?:\/\//i.test(u) ? u : 'https://' + u.replace(/^[a-z]+:\/*/i, '');
+const linkText = t => esc(t).replace(URL_RE_G, m => `<a href="${hrefOf(m)}">${m}</a>`); // 글자 → 안전하게 바꾼 뒤 주소만 링크로
+// 저장된 글자 속 주소를 링크로 (링크·태그·코드 안은 건드리지 않음)
+function linkify(root) {
+  const w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT), hits = [];
+  for (let t; (t = w.nextNode());) if (URL_RE.test(t.data) && !t.parentElement.closest('a,.tag,pre,code')) hits.push(t);
+  for (const t of hits) {
+    const box = document.createElement('span');
+    box.innerHTML = linkText(t.data);
+    t.replaceWith(...box.childNodes);
+  }
+}
+// 주소를 치고 띄어쓰기 → 그 주소를 링크로 / 엔터 → 윗줄의 주소를 링크로
+function autoLink(e) {
+  if (e.inputType === 'insertParagraph') {
+    const line = lineOf(), prev = (line?.closest('li') || line?.closest('#ed > *'))?.previousElementSibling;
+    if (prev) linkify(prev);
+    return;
+  }
+  if (e.inputType !== 'insertText' || !/^[ \u00a0]$/.test(e.data || '')) return;
+  const c = caretText();
+  const m = c?.before.match(/(?:^|[\s\u00a0])((?:https?:\/\/|www\.)\S+)[\s\u00a0]$/i);
+  if (!m) return;
+  const url = m[1].replace(/[.,;:!?'")\]]+$/, ''), end = c.before.length - 1 - (m[1].length - url.length), start = end - url.length;
+  const r = document.createRange();
+  r.setStart(c.t, start); r.setEnd(c.t, end);
+  const a = document.createElement('a');
+  a.href = hrefOf(url);
+  r.surroundContents(a);
+  const after = a.nextSibling;
+  if (after?.nodeType === 3) getSelection().collapse(after, Math.min(after.length, (m[1].length - url.length) + 1));
+}
+// 선택한 글자를 링크로: 글자가 주소면 바로, 아니면 주소를 물어봄
+function linkSelection(picked) {
+  if (/^(?:https?:\/\/|www\.)?[\w-]+(?:\.[\w-]+)+(?:[/?#]\S*)?$/i.test(picked)) return cmd('createLink', hrefOf(picked));
+  addLink();
+}
+function linkMenu(a, x, y) {
+  const href = a.getAttribute('href');
+  menu([
+    { title: href.length > 50 ? href.slice(0, 50) + '…' : href },
+    { label: '링크 열기', act: () => window.open(a.href, '_blank', 'noopener') },
+    { label: '링크 편집…', act: () => { let u = prompt('링크 주소', href)?.trim(); if (!u) return; if (!/^(https?:|mailto:|tel:)/i.test(u)) u = hrefOf(u); a.setAttribute('href', u); saveEditor(); } },
+    { label: '링크 복사', act: () => navigator.clipboard?.writeText(a.href) },
+    '-',
+    { label: '링크 제거', act: () => { a.replaceWith(...a.childNodes); saveEditor(); } },
+  ], x, y);
+}
 
 // ---------- 애플 메모 추가 기능 ----------
 const curBlock = () => { const l = lineOf(); return l?.closest('#ed li') || l?.closest('#ed > *'); };
@@ -1893,7 +1962,7 @@ addEventListener('online', pull);
 document.addEventListener('visibilitychange', () => document.visibilityState === 'visible' && db && pull());
 
 // ---------- 로그인 ----------
-const VERSION = '10.21-a';
+const VERSION = '10.23-a';
 // 메인 창(폴더·목록이 있는 창)을 열거나, 이미 열려 있으면 앞으로
 function openMain() { window.open(location.pathname, 'yun-main'); }
 function start() {
