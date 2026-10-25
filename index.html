@@ -628,6 +628,7 @@ function showEditor() {
   if (shown.id !== n.id || (!queue['notes:' + n.id] && shown.html !== n.html)) {
     if (shown.id !== n.id) closeFind();
     $('#ed').innerHTML = n.html; shown = { id: n.id, html: n.html };
+    unhead(ed);
     applyFolds();
     linkify(ed);
     hydrate(ed);
@@ -872,11 +873,13 @@ function keepCaret(fn) {
   const w = document.createTreeWalker(now, NodeFilter.SHOW_TEXT);
   for (let t; (t = w.nextNode());) { if (off <= t.length) return s.collapse(t, off); off -= t.length; }
 }
-const listCmd = c => keepCaret(() => document.execCommand(c));
+const listCmd = (c, v) => keepCaret(() => document.execCommand(c, false, v));
+// 크롬은 제목 줄을 목록으로 바꾸면 <h1><ul>…</ul></h1> 로 만들어 목록 전체가 제목 글씨가 된다 → 제목을 벗긴다 (애플은 본문이 됨)
+const unhead = root => root.querySelectorAll(':is(h1,h2,h3):has(> ul, > ol)').forEach(h => h.replaceWith(...h.childNodes));
 function list(cls) { // 글머리/대시/체크리스트 전환 (애플 메모처럼 같은 걸 다시 누르면 해제)
   let ul = curList();
   if (ul && (ul.className || '') === cls) { listCmd('insertUnorderedList'); return saveEditor(); }
-  if (!ul) { listCmd('insertUnorderedList'); ul = curList(); }
+  if (!ul) { if (lineOf()?.matches('h1,h2,h3')) listCmd('formatBlock', 'div'); listCmd('insertUnorderedList'); unhead(ed); ul = curList(); }
   if (ul) ul.className = cls;
   saveEditor();
 }
@@ -1962,7 +1965,7 @@ addEventListener('online', pull);
 document.addEventListener('visibilitychange', () => document.visibilityState === 'visible' && db && pull());
 
 // ---------- 로그인 ----------
-const VERSION = '10.23-a';
+const VERSION = '10.25-a';
 // 메인 창(폴더·목록이 있는 창)을 열거나, 이미 열려 있으면 앞으로
 function openMain() { window.open(location.pathname, 'yun-main'); }
 function start() {
