@@ -213,6 +213,9 @@ body.lightnote #editor{--bg:#fff;--text:#1d1d1f;--line:#e5e5ea;--field:#ececf0;-
   #editor{grid-column:2;grid-row:1}
   body[data-pane=folders] #list,body:not([data-pane=folders]) #folders{display:none}
   #list .back{display:inline-grid}
+  /* 폴더 ↔ 목록 전환도 밀려 들어오게 (메모 칸은 그대로 두고 왼쪽 칸만) */
+  body.fwd[data-pane=list] #list{animation:slideFromRight .3s var(--ease)}
+  body.bwd[data-pane=folders] #folders{animation:slideFromLeft .3s var(--ease)}
   #sbtoggle,#sbshow,#folders .rs{display:none!important}
 }
 /* 폴드 바깥 화면·휴대폰: 한 화면씩 (아이폰 메모처럼) */
@@ -1965,7 +1968,7 @@ addEventListener('online', pull);
 document.addEventListener('visibilitychange', () => document.visibilityState === 'visible' && db && pull());
 
 // ---------- 로그인 ----------
-const VERSION = '10.25-a';
+const VERSION = '10.26-a';
 // 메인 창(폴더·목록이 있는 창)을 열거나, 이미 열려 있으면 앞으로
 function openMain() { window.open(location.pathname, 'yun-main'); }
 function start() {
