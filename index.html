@@ -43,16 +43,22 @@ svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.6;stroke
 
 #app{display:grid;grid-template-columns:var(--sw) var(--lw) 1fr;height:100vh;height:100dvh}
 @media (min-width:1024px){
-  body.nosb #app{grid-template-columns:var(--lw) 1fr}
-  body.nosb #folders{display:none}
+  body.nosb #app{grid-template-columns:0 var(--lw) 1fr}
+  body.nosb #folders{visibility:hidden;overflow:hidden}
+  body.nolist #app{grid-template-columns:0 0 1fr}
 }
 /* 메모만 보기 (애플 메모처럼 폴더·목록을 접고 본문만) — 폰은 원래 한 화면씩이라 해당 없음 */
 #listtoggle{display:none}
 @media (min-width:600px){
   body:not(.single) #listtoggle{display:inline-grid}
-  body.nolist #app{grid-template-columns:1fr!important}
-  body.nolist #folders,body.nolist #list{display:none!important}
-  body.nolist #editor{grid-column:1!important;display:flex!important}
+  body.nolist #folders,body.nolist #list{visibility:hidden;overflow:hidden}
+  /* 접고 펼 때 칸 너비가 미끄러지게. 다 접힌 뒤에 숨긴다 (끌어서 너비 조절할 땐 애니메이션 없음) */
+  body.anim #app{transition:grid-template-columns .3s var(--ease)}
+  body.anim #folders,body.anim #list{overflow:hidden}
+  body.anim.nosb #folders,body.anim.nolist :is(#folders,#list){transition:visibility 0s .3s}
+}
+@media (min-width:600px) and (max-width:1023px){
+  body.nolist #app{grid-template-columns:0 1fr}
 }
 @media (min-width:600px) and (display-mode:window-controls-overlay){
   body.nolist #edbar{padding-left:calc(env(titlebar-area-x,0px) + 8px)}
@@ -1778,8 +1784,8 @@ $('#nlist').addEventListener('mousedown', e => { if (!e.target.closest('input'))
 $('#flist').addEventListener('mousedown', () => setTimeout(() => $('#flist').focus({ preventScroll: true })));
 $('#newf').onclick = e => menu([{ label: '새로운 폴더', act: () => newFolder() }, { label: '새로운 스마트 폴더…', act: () => smartDialog() }], ...below(e.currentTarget));
 $('#listtoggle').onclick = toggleList;
-$('#sbtoggle').onclick = () => { P.nosb = true; savePrefs(); render(); };
-$('#sbshow').onclick = () => { P.nosb = false; savePrefs(); render(); };
+$('#sbtoggle').onclick = () => { if (!P.nosb) toggleSidebar(); };
+$('#sbshow').onclick = () => { if (P.nosb) toggleSidebar(); };
 $('#viewmenu').onclick = e => viewMenu(...below(e.currentTarget));
 $('#more').onclick = e => note(S.open) && noteMenu(note(S.open), ...below(e.currentTarget), true);
 $('#fmt').onmousedown = $('#check').onmousedown = $('#table').onmousedown = e => e.preventDefault();
@@ -1911,8 +1917,9 @@ document.addEventListener('keydown', e => {
   if (c === 'Equal') return go(() => resizeText(1.15));
   if (c === 'Minus') return go(() => resizeText(1 / 1.15));
 });
-function toggleList() { P.nolist = !P.nolist; savePrefs(); render(); if (P.nolist) $('#ed').focus(); }
-function toggleSidebar() { P.nosb = !P.nosb; savePrefs(); render(); }
+function animLayout() { document.body.classList.add('anim'); clearTimeout(animLayout.t); animLayout.t = setTimeout(() => document.body.classList.remove('anim'), 350); }
+function toggleList() { animLayout(); P.nolist = !P.nolist; savePrefs(); render(); if (P.nolist) $('#ed').focus(); }
+function toggleSidebar() { animLayout(); P.nosb = !P.nosb; savePrefs(); render(); }
 
 // 지금 커서가 있는 섹션만 접기/펼치기 (⌥⌘← ⌥⌘→)
 function foldHere(on) {
@@ -2038,7 +2045,7 @@ addEventListener('online', pull);
 document.addEventListener('visibilitychange', () => document.visibilityState === 'visible' && db && pull());
 
 // ---------- 로그인 ----------
-const VERSION = '10.30-a';
+const VERSION = '10.30-b';
 // 메인 창(폴더·목록이 있는 창)을 열거나, 이미 열려 있으면 앞으로
 function openMain() { window.open(location.pathname, 'yun-main'); }
 function start() {
