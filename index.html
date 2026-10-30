@@ -46,6 +46,17 @@ svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.6;stroke
   body.nosb #app{grid-template-columns:var(--lw) 1fr}
   body.nosb #folders{display:none}
 }
+/* 메모만 보기 (애플 메모처럼 폴더·목록을 접고 본문만) — 폰은 원래 한 화면씩이라 해당 없음 */
+#listtoggle{display:none}
+@media (min-width:600px){
+  body:not(.single) #listtoggle{display:inline-grid}
+  body.nolist #app{grid-template-columns:1fr!important}
+  body.nolist #folders,body.nolist #list{display:none!important}
+  body.nolist #editor{grid-column:1!important;display:flex!important}
+}
+@media (min-width:600px) and (display-mode:window-controls-overlay){
+  body.nolist #edbar{padding-left:calc(env(titlebar-area-x,0px) + 8px)}
+}
 .back{grid-auto-flow:column;gap:2px;color:var(--acc)!important;padding:0 8px 0 2px}
 .pane{position:relative;display:flex;flex-direction:column;min-width:0;min-height:0}
 #folders{background:var(--side);border-right:1px solid var(--line)}
@@ -331,6 +342,7 @@ body.lightnote #editor{--bg:#fff;--text:#1d1d1f;--line:#e5e5ea;--field:#ececf0;-
   <section class="pane" id="editor">
     <div class="bar" id="edbar">
       <button class="ib back" data-go="list"><svg><use href="#i-back"/></svg><span id="backname"></span></button>
+      <button class="ib" id="listtoggle" title="메모만 보기 (⌃⌘L)"><svg><use href="#i-side"/></svg></button>
       <span class="cap only-single"><button class="ib" id="tomain" title="모든 메모 (⌘0)"><svg><use href="#i-side"/></svg></button></span>
       <div id="tools">
         <span class="cap"><button class="ib newn" title="새 메모 (⌘N)"><svg><use href="#i-new"/></svg></button></span>
@@ -398,7 +410,7 @@ const db = cfg.url && supabase.createClient(cfg.url, cfg.key);
 
 let S = { folders: load('folders', []), notes: load('notes', []), view: load('view', ALL), open: null, q: '' };
 // 보기 설정 (기기마다): 정렬 기준·날짜 그룹·순서·패널 너비
-let P = Object.assign({ sort: 'updated', group: true, rev: false, pinOpen: true, nosb: false, sink: true, counts: true, startStyle: 'H1', zoom: 1, lightNote: false, sw: 260, lw: 300 }, load('prefs', {}));
+let P = Object.assign({ sort: 'updated', group: true, rev: false, pinOpen: true, nosb: false, nolist: false, sink: true, counts: true, startStyle: 'H1', zoom: 1, lightNote: false, sw: 260, lw: 300 }, load('prefs', {}));
 const savePrefs = () => store('prefs', P);
 // 서버에 아직 못 올린 변경: "table:id" → {table,row,del}. 저장 성공 전엔 절대 안 지운다
 const SINGLE = new URLSearchParams(location.search).get('note'); // 작은 창으로 연 메모
@@ -611,6 +623,8 @@ function render() {
   tagList = allTags();
   if (S.view !== ALL && S.view !== TRASH && !folder(S.view) && !(S.view.startsWith('tag:') && tagList.some(([t]) => 'tag:' + t === S.view))) S.view = ALL;
   document.body.classList.toggle('nosb', P.nosb);
+  document.body.classList.toggle('nolist', P.nolist);
+  $('#listtoggle').title = P.nolist ? '폴더·목록 보기 (⌃⌘L)' : '메모만 보기 (⌃⌘L)';
   document.body.classList.toggle('nocount', !P.counts);
   document.body.classList.toggle('lightnote', P.lightNote);
   document.body.style.setProperty('--zoom', P.zoom);
@@ -1763,6 +1777,7 @@ $('#flist').onkeydown = e => {
 $('#nlist').addEventListener('mousedown', e => { if (!e.target.closest('input')) setTimeout(() => $('#nlist').focus({ preventScroll: true })); });
 $('#flist').addEventListener('mousedown', () => setTimeout(() => $('#flist').focus({ preventScroll: true })));
 $('#newf').onclick = e => menu([{ label: '새로운 폴더', act: () => newFolder() }, { label: '새로운 스마트 폴더…', act: () => smartDialog() }], ...below(e.currentTarget));
+$('#listtoggle').onclick = toggleList;
 $('#sbtoggle').onclick = () => { P.nosb = true; savePrefs(); render(); };
 $('#sbshow').onclick = () => { P.nosb = false; savePrefs(); render(); };
 $('#viewmenu').onclick = e => viewMenu(...below(e.currentTarget));
@@ -1849,6 +1864,7 @@ document.addEventListener('keydown', e => {
   if (ctl && c === 'Equal') return inEd && go(() => cmd('superscript'));
   if (ctl && c === 'Minus') return inEd && go(() => cmd('subscript'));
   if (ctl && k === 's') return go(toggleSidebar);
+  if (ctl && k === 'l') return go(toggleList);
   if (ctl) return;
   // 어디서나
   if (k === 'n') return go(sh ? () => newFolder() : newNote);
@@ -1895,6 +1911,7 @@ document.addEventListener('keydown', e => {
   if (c === 'Equal') return go(() => resizeText(1.15));
   if (c === 'Minus') return go(() => resizeText(1 / 1.15));
 });
+function toggleList() { P.nolist = !P.nolist; savePrefs(); render(); if (P.nolist) $('#ed').focus(); }
 function toggleSidebar() { P.nosb = !P.nosb; savePrefs(); render(); }
 
 // 지금 커서가 있는 섹션만 접기/펼치기 (⌥⌘← ⌥⌘→)
@@ -2021,7 +2038,7 @@ addEventListener('online', pull);
 document.addEventListener('visibilitychange', () => document.visibilityState === 'visible' && db && pull());
 
 // ---------- 로그인 ----------
-const VERSION = '10.27-a';
+const VERSION = '10.30-a';
 // 메인 창(폴더·목록이 있는 창)을 열거나, 이미 열려 있으면 앞으로
 function openMain() { window.open(location.pathname, 'yun-main'); }
 function start() {
