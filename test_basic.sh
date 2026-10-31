@@ -78,6 +78,8 @@ D=$(ev "$B" "!S.notes[0]?.deleted_at"); ok "복구가 폰에도 반영" "$D" "$D
 
 $A click '#tools .newn' >/dev/null; $A eval "toggleCheck();1" >/dev/null; $A keyboard type "교재" >/dev/null; $A press Enter >/dev/null; $A keyboard type "잠옷" >/dev/null
 H=$(html "$A"); ok "새 메모 첫 줄에서 체크리스트 → 제목 글씨 아님" "$([[ "$H" == *'<ul class=\"cl\"><li>교재</li><li>잠옷</li></ul>'* && "$H" != *'<h1>'* ]] && echo true)" "$H"
+UID1=$(ev "$A" "S.open"); $A eval "deleteNote(note(S.open));1" >/dev/null; sleep .5; $A eval "document.querySelector('#nlist').focus();1" >/dev/null; $A press "Meta+z" >/dev/null; sleep .5
+ok "메모 지운 직후 ⌘Z → 되살아남" "$([[ $(ev "$A" "!note('$UID1').deleted_at") == true ]] && echo true)"
 E1=$($A errors 2>&1 | grep -v -i "favicon" | head -3); ok "맥 화면 오류 없음" "$([[ -z "$E1" ]] && echo true)" "$E1"
 E2=$($B errors 2>&1 | grep -v -i "favicon" | head -3); ok "폰 화면 오류 없음" "$([[ -z "$E2" ]] && echo true)" "$E2"
 echo "결과: 통과 $pass · 실패 $fail"

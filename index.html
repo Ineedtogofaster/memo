@@ -210,6 +210,10 @@ body.lightnote #editor{--bg:#fff;--text:#1d1d1f;--line:#e5e5ea;--field:#ececf0;-
 #empty{flex:1;display:flex;align-items:center;justify-content:center;color:var(--sub)}
 
 /* 팝업 메뉴 */
+#toast{position:fixed;z-index:19;left:50%;bottom:max(18px,env(safe-area-inset-bottom));transform:translateX(-50%);display:flex;align-items:center;gap:14px;padding:10px 10px 10px 16px;border-radius:14px;background:#1d1d1fee;color:#fff;font-size:14.5px;box-shadow:0 8px 28px #0004;animation:toastIn .2s var(--ease);white-space:nowrap}
+#toast button{color:#ffc93c;font-weight:600;padding:4px 8px;font-size:14.5px}
+body[data-pane=editor] #toast{bottom:calc(66px + env(safe-area-inset-bottom))}
+@keyframes toastIn{from{opacity:0;transform:translate(-50%,10px)}}
 #pop{position:fixed;z-index:20;background:color-mix(in srgb,var(--pop) 86%,transparent);-webkit-backdrop-filter:blur(24px) saturate(1.6);backdrop-filter:blur(24px) saturate(1.6);border:1px solid var(--capline);border-radius:14px;box-shadow:0 12px 36px #0003;padding:6px;min-width:220px;max-height:70vh;overflow-y:auto}
 #pop button{display:flex;gap:8px;width:100%;text-align:left;padding:6px 10px;border-radius:6px;font-size:13.5px;white-space:nowrap}
 #pop button:hover:not(:disabled){background:var(--acc);color:#000}
@@ -284,6 +288,7 @@ body.lightnote #editor{--bg:#fff;--text:#1d1d1f;--line:#e5e5ea;--field:#ececf0;-
 </form>
 
 <div id="pop" hidden></div>
+<div id="toast" hidden><span></span><button></button></div>
 <div id="lightbox" hidden><img alt=""></div>
 <dialog id="smartdlg"><form method="dialog">
   <h3 id="sm-title">새로운 스마트 폴더</h3>
@@ -716,7 +721,35 @@ function deleteNote(n) {
     if (isEmpty(n.html)) dropNote(n); else save(n, { deleted_at: now() }, false);
     if (S.open === n.id) { S.open = null; goPane('list'); }
     render();
+    deleted([n]);
   });
+}
+// 지운 메모 되돌리기: 맥은 ⌘Z (애플 메모의 '실행 취소 메모 삭제'), 폰은 아래 '되돌리기' 줄
+// 빈 메모는 바로 영구 삭제라 되돌릴 것이 없다. 되돌리기를 놓쳐도 휴지통에서 복구할 수 있다
+let undoDel = null;
+function deleted(ns) {
+  const ids = ns.filter(n => n.deleted_at).map(n => n.id);
+  if (!ids.length) return;
+  undoDel = ids;
+  if (SWIPE) toast(ids.length > 1 ? `메모 ${ids.length}개 삭제됨` : '메모 삭제됨', '되돌리기', restoreDeleted);
+}
+function restoreDeleted() {
+  const ns = (undoDel || []).map(note).filter(n => n?.deleted_at);
+  undoDel = null;
+  $('#toast').hidden = true;
+  if (!ns.length) return;
+  ns.forEach(n => save(n, { deleted_at: null }, false));
+  render();
+  if (!stacked()) openNote(ns[0].id);
+}
+function toast(msg, label, act) {
+  const t = $('#toast');
+  t.firstChild.textContent = msg;
+  t.lastChild.textContent = label;
+  t.lastChild.onclick = act;
+  t.hidden = false;
+  clearTimeout(toast.t);
+  toast.t = setTimeout(() => (t.hidden = true), 5000);
 }
 
 function setQ(v) {
@@ -1062,8 +1095,35 @@ ed.onpaste = e => {
 // 다른 곳에서 복사한 HTML 정리: 허용한 태그만, 속성은 링크 주소와 체크리스트 표시만
 const PASTE_TAGS = { B: 'b', STRONG: 'b', I: 'i', EM: 'i', U: 'u', S: 's', STRIKE: 's', DEL: 's', A: 'a', BR: 'br', UL: 'ul', OL: 'ol', LI: 'li',
   H1: 'h1', H2: 'h2', H3: 'h3', H4: 'h3', BLOCKQUOTE: 'blockquote', PRE: 'pre', CODE: 'code', TABLE: 'table', TR: 'tr', TD: 'td', TH: 'td', DIV: 'div', P: 'div', SUP: 'sup', SUB: 'sub' };
+// 워드 글머리표·번호는 진짜 목록이 아니라 '· 항목' 같은 문단으로 온다 → 이어진 문단끼리 묶어 목록으로
+const BULLET_RE = /^[\s\u00a0]*([·•▪◦●○■□◆◇➢➤✓✔\-–—*o§\uf0a7\uf0b7\uf076\uf0d8]|\(?\d{1,3}[.)]|[a-zA-Z가-힣][.)])([\s\u00a0]+|$)/;
+function wordLists(doc) {
+  const items = [...doc.querySelectorAll('p,div,h1,h2,h3,h4,h5,h6')].filter(p => /mso-list:\s*l\d/i.test(p.getAttribute('style') || '') || /^MsoListParagraph/.test(p.className));
+  for (const p of items) {
+    p.querySelectorAll('[style*="mso-list:ignore" i],[style*="mso-list: ignore" i]').forEach(x => { p.dataset.mark = (p.dataset.mark || '') + x.textContent; x.remove(); });
+    // 표시(·, 1.)를 떼고, 그 뒤 칸 띄우기 공백도 첫 글자 전까지 지운다
+    const w = doc.createTreeWalker(p, NodeFilter.SHOW_TEXT);
+    for (let t, got = !!p.dataset.mark; (t = w.nextNode());) {
+      if (!got && t.data.trim()) { const m = t.data.match(BULLET_RE); got = true; if (!m) break; p.dataset.mark = m[1]; t.data = t.data.slice(m[0].length); }
+      t.data = t.data.replace(/^[\s ]+/, '');
+      if (t.data) break;
+    }
+    if (!p.dataset.mark && p.firstChild?.textContent.trim() === '') p.firstChild.remove();
+  }
+  for (const p of items) {
+    if (!p.isConnected) continue;
+    const num = /^\(?[\da-zA-Z가-힣]{1,3}[.)]/.test((p.dataset.mark || '').trim());
+    const list = doc.createElement(num ? 'ol' : 'ul');
+    p.before(list);
+    for (let x = p; x && items.includes(x);) {
+      const nx = x.nextElementSibling, li = doc.createElement('li');
+      li.append(...x.childNodes); list.append(li); x.remove(); x = nx;
+    }
+  }
+}
 function cleanHTML(html) {
   const doc = new DOMParser().parseFromString(html, 'text/html');
+  wordLists(doc);
   const walk = (n, inPre) => [...n.childNodes].map(c => {
     if (c.nodeType === 3) {
       if (inPre) return esc(c.data);
@@ -1539,10 +1599,11 @@ async function addFiles(files) {
     hydrate(ed);
     saveEditor();
     status('첨부 올리는 중…');
-    const up = await db.storage.from('attachments').upload(path, body, { contentType: body.type || file.type || 'application/octet-stream' });
-    if (thumb) await db.storage.from('attachments').upload(tpath, thumb, { contentType: 'image/jpeg' });
-    status(up.error ? '첨부 실패: ' + up.error.message : '');
-    if (up.error) { ed.querySelectorAll(`[data-att="${path}"]`).forEach(x => x.closest('.att')?.remove() || x.remove()); saveEditor(); alert(`${file.name} 올리기 실패: ${up.error.message}`); }
+    // 인터넷이 끊기면 오류를 돌려주지 않고 던진다 → 잡아서 같은 실패 처리로
+    const up = await db.storage.from('attachments').upload(path, body, { contentType: body.type || file.type || 'application/octet-stream' }).catch(error => ({ error }));
+    if (thumb && !up.error) await db.storage.from('attachments').upload(tpath, thumb, { contentType: 'image/jpeg' }).catch(() => {});
+    status(up.error ? '첨부 실패: ' + korErr(up.error) : '');
+    if (up.error) { ed.querySelectorAll(`[data-att="${path}"]`).forEach(x => x.closest('.att')?.remove() || x.remove()); saveEditor(); alert(`${file.name} 올리기 실패: ${korErr(up.error)}`); }
   }
 }
 async function openAttachment(path) {
@@ -1738,6 +1799,7 @@ function deleteSelected() {
   fadeOut(ns.map(n => n.id), () => {
     if (S.view === TRASH) ns.forEach(dropNote);
     else ns.forEach(n => isEmpty(n.html) ? dropNote(n) : save(n, { deleted_at: now() }, false));
+    if (S.view !== TRASH) deleted(ns);
     sel = new Set();
     S.open = null;
     render();
@@ -1872,6 +1934,7 @@ document.addEventListener('keydown', e => {
   if (ctl && k === 's') return go(toggleSidebar);
   if (ctl && k === 'l') return go(toggleList);
   if (ctl) return;
+  if (k === 'z' && !sh && !alt && undoDel && !inEd && !/INPUT|TEXTAREA/.test(document.activeElement?.tagName)) return go(restoreDeleted);
   // 어디서나
   if (k === 'n') return go(sh ? () => newFolder() : newNote);
   if (alt && k === 's') return go(toggleSidebar);
@@ -2045,7 +2108,7 @@ addEventListener('online', pull);
 document.addEventListener('visibilitychange', () => document.visibilityState === 'visible' && db && pull());
 
 // ---------- 로그인 ----------
-const VERSION = '10.30-b';
+const VERSION = '11.01-a';
 // 메인 창(폴더·목록이 있는 창)을 열거나, 이미 열려 있으면 앞으로
 function openMain() { window.open(location.pathname, 'yun-main'); }
 function start() {
@@ -2061,11 +2124,24 @@ function start() {
   if (new URLSearchParams(location.search).has('new')) { history.replaceState(history.state, '', location.pathname); newNote(); }
   subscribe();
 }
+// 서버 오류(영어)를 한국어로. 모르는 오류도 영어 원문은 보이지 않게
+function korErr(e) {
+  const m = (e?.message || '') + ' ' + (e?.code || '');
+  if (/invalid login credentials|invalid_credentials/i.test(m)) return '이메일이나 비밀번호가 맞지 않아요.';
+  if (/already registered|user_already_exists/i.test(m)) return '이미 가입된 이메일이에요. 로그인을 눌러 주세요.';
+  if (/not confirmed|email_not_confirmed/i.test(m)) return '메일함의 확인 링크를 누른 뒤 로그인하세요.';
+  if (/password.*(least|short|weak)|weak_password/i.test(m)) return '비밀번호는 6자 이상으로 해 주세요.';
+  if (/invalid.*email|email_address_invalid/i.test(m)) return '이메일 주소를 다시 확인해 주세요.';
+  if (/rate limit|too many|over_request_rate_limit|429/i.test(m)) return '잠시 뒤에 다시 해 주세요. (너무 자주 시도했어요)';
+  if (/payload too large|exceeded the maximum|413|entity too large/i.test(m)) return '파일이 너무 커요. 50MB 이하만 올릴 수 있어요.';
+  if (/fetch|network|offline|load failed/i.test(m) || !navigator.onLine) return '인터넷 연결을 확인해 주세요.';
+  return '잠시 문제가 생겼어요. 다시 해 주세요.';
+}
 async function auth(signup) {
   const email = $('#em').value, password = $('#pw').value;
   $('#authmsg').textContent = '…';
   const { data, error } = signup ? await db.auth.signUp({ email, password }) : await db.auth.signInWithPassword({ email, password });
-  if (error) return $('#authmsg').textContent = error.message;
+  if (error) return $('#authmsg').textContent = korErr(error);
   if (!data.session) return $('#authmsg').textContent = '메일함의 확인 링크를 누른 뒤 로그인하세요.';
   start();
 }
