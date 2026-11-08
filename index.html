@@ -211,6 +211,10 @@ body.lightnote #editor{--bg:#fff;--text:#1d1d1f;--line:#e5e5ea;--field:#ececf0;-
 
 /* 팝업 메뉴 */
 #toast{position:fixed;z-index:19;left:50%;bottom:max(18px,env(safe-area-inset-bottom));transform:translateX(-50%);display:flex;align-items:center;gap:14px;padding:10px 10px 10px 16px;border-radius:14px;background:#1d1d1fee;color:#fff;font-size:14.5px;box-shadow:0 8px 28px #0004;animation:toastIn .2s var(--ease);white-space:nowrap}
+#offbar{display:none;position:fixed;z-index:18;left:50%;bottom:max(18px,env(safe-area-inset-bottom));transform:translateX(-50%);padding:5px 14px;border-radius:99px;background:#1d1d1fdd;color:#fff;font-size:13px;white-space:nowrap;pointer-events:none}
+body.offline #offbar{display:block}
+body[data-pane=editor] #offbar{bottom:calc(66px + env(safe-area-inset-bottom))}
+body.offline #toast{translate:0 -38px}
 #toast button{color:#ffc93c;font-weight:600;padding:4px 8px;font-size:14.5px}
 body[data-pane=editor] #toast{bottom:calc(66px + env(safe-area-inset-bottom))}
 @keyframes toastIn{from{opacity:0;transform:translate(-50%,10px)}}
@@ -289,6 +293,7 @@ body[data-pane=editor] #toast{bottom:calc(66px + env(safe-area-inset-bottom))}
 
 <div id="pop" hidden></div>
 <div id="toast" hidden><span></span><button></button></div>
+<div id="offbar">인터넷 끊김 · 연결되면 자동 저장</div>
 <div id="lightbox" hidden><img alt=""></div>
 <dialog id="smartdlg"><form method="dialog">
   <h3 id="sm-title">새로운 스마트 폴더</h3>
@@ -452,8 +457,10 @@ const note = id => S.notes.find(n => n.id === id);
 const status = t => $('#status').textContent = t;
 
 // ---------- 동기화 ----------
-function put(table, row, del = false) {
-  queue[table + ':' + row.id] = { table, row: del ? { id: row.id } : { ...row }, del };
+// base: 고치기 시작할 때 서버 판의 updated_at — 올릴 때 서버가 그새 바뀌었으면 충돌
+function put(table, row, del = false, base) {
+  const k = table + ':' + row.id;
+  queue[k] = { table, row: del ? { id: row.id } : { ...row }, del, base: queue[k] ? queue[k].base : base };
   store(QKEY, queue); // 저장 대기열은 바로 (글 잃어버리지 않게)
   clearTimeout(put.c); // 오프라인 사본(메모 전체)은 1초 모아서 한 번에 — 매 글자마다 1MB 쓰면 느림
   put.c = setTimeout(cache, 1000);
@@ -468,19 +475,44 @@ async function flush() {
   try {
     for (const [k, op] of Object.entries(queue)) {
       const t = db.from(op.table);
+      if (op.table === 'notes' && !op.del && op.base) await keepConflict(op);
       const { error } = op.del ? await t.delete().eq('id', op.row.id) : await t.upsert(op.row);
       if (error) throw error;
       if (queue[k] === op) delete queue[k]; // 그새 또 고쳤으면 새 버전은 남겨둔다
       store(QKEY, queue);
     }
+    netOk(true);
   } catch (e) {
     console.warn(e);
+    netOk(false);
   } finally {
     flushing = false;
   }
   const n = Object.keys(queue).length;
-  status(n ? `오프라인 · 저장 대기 ${n}개` : '');
+  status(n ? `저장 대기 ${n}개` : '');
 }
+
+// 다른 기기가 같은 메모를 그새 고쳤으면 그 판을 「충돌본」 메모로 따로 남기고, 내 판을 올린다
+async function keepConflict(op) {
+  const { data, error } = await db.from('notes').select('*').eq('id', op.row.id).maybeSingle();
+  if (error) throw error;
+  if (!data || data.updated_at === op.base || Date.parse(data.updated_at) <= Date.parse(op.base) || data.html === op.row.html) return;
+  const t = now();
+  const c = { ...data, id: crypto.randomUUID(), html: '<div>⚠️ 충돌본 — 다른 기기에서 같은 메모를 고친 판이에요</div>' + data.html, pinned: false, created_at: t, updated_at: t };
+  const r = await db.from('notes').insert(c);
+  if (r.error) throw r.error;
+  S.notes.push(c);
+  cache();
+  render();
+  toast('다른 기기에서 고친 판은 「충돌본」으로 따로 남겼어요');
+}
+
+// 인터넷 끊김 안내 띠
+function netOk(ok) {
+  ok = ok && navigator.onLine;
+  document.body.classList.toggle('offline', !ok);
+}
+addEventListener('offline', () => netOk(false));
 setInterval(() => Object.keys(queue).length && flush(), 5000);
 
 async function selectAll(table) {
@@ -506,8 +538,10 @@ async function pull() {
     S.notes = merge('notes', n);
     S.folders = merge('folders', f);
   } catch (e) {
-    return status('오프라인');
+    netOk(false);
+    return;
   }
+  netOk(true);
   const old = Date.now() - 30 * 864e5; // 최근 삭제된 항목은 30일 뒤 비움
   for (const x of S.notes.filter(x => x.deleted_at && Date.parse(x.deleted_at) < old)) dropNote(x);
   cache();
@@ -696,8 +730,9 @@ function openNote(id) {
 
 // bump=false: 고정·폴더 이동은 수정 날짜를 바꾸지 않는다 (애플 메모와 같음)
 function save(n, fields, bump = true) {
+  const base = n.updated_at;
   Object.assign(n, fields, bump ? { updated_at: now() } : {});
-  put('notes', n);
+  put('notes', n, false, base);
 }
 
 function newNote() {
@@ -747,6 +782,7 @@ function toast(msg, label, act) {
   t.firstChild.textContent = msg;
   t.lastChild.textContent = label;
   t.lastChild.onclick = act;
+  t.lastChild.hidden = !label;
   t.hidden = false;
   clearTimeout(toast.t);
   toast.t = setTimeout(() => (t.hidden = true), 5000);
@@ -2108,7 +2144,7 @@ addEventListener('online', pull);
 document.addEventListener('visibilitychange', () => document.visibilityState === 'visible' && db && pull());
 
 // ---------- 로그인 ----------
-const VERSION = '11.01-a';
+const VERSION = '11.08-a';
 // 메인 창(폴더·목록이 있는 창)을 열거나, 이미 열려 있으면 앞으로
 function openMain() { window.open(location.pathname, 'yun-main'); }
 function start() {
@@ -2118,6 +2154,7 @@ function start() {
   $('#auth').hidden = true;
   $('#app').hidden = false;
   if (SINGLE) { document.body.classList.add('single'); document.body.dataset.pane = 'editor'; S.open = SINGLE; $('#tomain').onclick = openMain; }
+  netOk(true);
   applyWidths();
   render();
   initHistory();
@@ -2156,8 +2193,12 @@ $('#logout').onclick = async () => {
 
 (async () => {
   if (!db) { $('#auth').hidden = false; $('#auth').innerHTML = '<h1>메모</h1><p>config.js 에 Supabase 주소와 키를 넣어 주세요.</p>'; return; }
-  const { data } = await db.auth.getSession();
-  if (data.session) start(); else $('#auth').hidden = false;
+  // 인터넷이 없어 로그인 연장을 못 해도(연장 재시도는 길게 걸림), 이 기기에 로그인 기록이 있으면 마지막 화면으로 바로 연다
+  const saved = Object.keys(localStorage).some(k => /^sb-.+-auth-token$/.test(k));
+  const late = new Promise(r => setTimeout(() => r({ data: {}, error: 'timeout' }), navigator.onLine ? 4000 : 0));
+  const { data, error } = await Promise.race([db.auth.getSession(), late]);
+  if (data.session || (saved && (error || !navigator.onLine))) start(); else $('#auth').hidden = false;
+  if (!data.session && saved) addEventListener('online', () => db.auth.getSession().then(() => { subscribe(); pull(); }), { once: true });
 })();
 
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js');
