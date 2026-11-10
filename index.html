@@ -176,14 +176,15 @@ body.nocount .f .n{visibility:hidden}
 #lightbox{position:fixed;inset:0;z-index:60;background:#000d;display:flex;align-items:center;justify-content:center;cursor:zoom-out}
 #lightbox img{max-width:94vw;max-height:94vh;border-radius:8px}
 /* 스마트 폴더 창 */
-#smartdlg{border:0;border-radius:16px;padding:0;width:min(440px,92vw);background:var(--pop);color:var(--text);box-shadow:0 20px 60px #0005}
-#smartdlg::backdrop{background:#0004}
-#smartdlg form{display:flex;flex-direction:column;gap:12px;padding:20px}
-#smartdlg h3{margin:0;font-size:17px}
-#smartdlg label{font-size:13px;color:var(--sub);display:flex;flex-direction:column;gap:5px}
-#smartdlg input[type=text],#smartdlg select{font:inherit;color:var(--text);background:var(--field);border:0;border-radius:8px;padding:8px 10px}
+#smartdlg,.dlg{border:0;border-radius:16px;padding:0;width:min(440px,92vw);background:var(--pop);color:var(--text);box-shadow:0 20px 60px #0005}
+#smartdlg::backdrop,.dlg::backdrop{background:#0004}
+.dlg .sub{margin:0;font-size:13px;color:var(--sub)}.dlg .err{margin:0;font-size:13px;color:#ff3b30;min-height:1em}
+#smartdlg form,.dlg form{display:flex;flex-direction:column;gap:12px;padding:20px}
+#smartdlg h3,.dlg h3{margin:0;font-size:17px}
+#smartdlg label,.dlg label{font-size:13px;color:var(--sub);display:flex;flex-direction:column;gap:5px}
+#smartdlg input[type=text],.dlg input,#smartdlg select{font:inherit;color:var(--text);background:var(--field);border:0;border-radius:8px;padding:8px 10px}
 #smartdlg .row{display:flex;gap:8px;align-items:center;color:var(--text);font-size:14px;flex-direction:row}
-#smartdlg .btns{display:flex;justify-content:flex-end;gap:8px;margin-top:4px}
+#smartdlg .btns,.dlg .btns{display:flex;justify-content:flex-end;gap:8px;margin-top:4px}
 #smartdlg .btns button{padding:8px 16px;border-radius:8px;background:var(--field)}
 #smartdlg .btns .main{background:var(--acc);color:#000;font-weight:600}
 #smartdlg .tagpick{display:flex;flex-wrap:wrap;gap:6px}
@@ -307,6 +308,14 @@ body[data-pane=editor] #toast{bottom:calc(66px + env(safe-area-inset-bottom))}
   <label class="row"><input type="checkbox" id="sm-att"> 첨부 파일이 있는 메모만</label>
   <div class="btns"><button value="cancel" formnovalidate>취소</button><button value="ok" class="main">확인</button></div>
 </form></dialog>
+<dialog id="pwdlg" class="dlg"><form>
+  <h3>비밀번호 바꾸기</h3>
+  <p class="sub" id="pw-who"></p>
+  <label>새 비밀번호<input type="password" id="pw-new" autocomplete="new-password" placeholder="6자 이상"></label>
+  <label>한 번 더<input type="password" id="pw-new2" autocomplete="new-password" placeholder="같은 비밀번호"></label>
+  <p class="err" id="pw-err"></p>
+  <div class="btns"><button type="button" id="pw-cancel">취소</button><button class="main" id="pw-ok">바꾸기</button></div>
+</form></dialog>
 <svg width="0" height="0" style="position:absolute">
   <symbol id="i-folder" viewBox="0 0 24 24"><path d="M3 7.5A1.5 1.5 0 0 1 4.5 6h4.3l1.8 2h8.9A1.5 1.5 0 0 1 21 9.5v8A1.5 1.5 0 0 1 19.5 19h-15A1.5 1.5 0 0 1 3 17.5z"/><path d="M3 10h18"/></symbol>
   <symbol id="i-all" viewBox="0 0 24 24"><path d="M4 8.5A1.5 1.5 0 0 1 5.5 7h13A1.5 1.5 0 0 1 20 8.5v9a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 17.5z"/><path d="M6 4.5h12"/></symbol>
@@ -338,7 +347,7 @@ body[data-pane=editor] #toast{bottom:calc(66px + env(safe-area-inset-bottom))}
     </div>
     <h1 class="big">폴더</h1>
     <div class="scroll" id="flist" tabindex="0"></div>
-    <div class="foot"><span id="status" class="sp"></span><span id="ver"></span><button id="logout">로그아웃</button></div>
+    <div class="foot"><span id="status" class="sp"></span><span id="ver"></span><button id="pwbtn">비밀번호 바꾸기</button><button id="logout">로그아웃</button></div>
     <div class="rs" data-v="--sw"></div>
   </section>
 
@@ -2144,7 +2153,7 @@ addEventListener('online', pull);
 document.addEventListener('visibilitychange', () => document.visibilityState === 'visible' && db && pull());
 
 // ---------- 로그인 ----------
-const VERSION = '11.08-a';
+const VERSION = '11.10-a';
 // 메인 창(폴더·목록이 있는 창)을 열거나, 이미 열려 있으면 앞으로
 function openMain() { window.open(location.pathname, 'yun-main'); }
 function start() {
@@ -2184,6 +2193,29 @@ async function auth(signup) {
 }
 $('#auth').onsubmit = e => { e.preventDefault(); auth(false); };
 $('#signup').onclick = () => $('#auth').reportValidity() && auth(true);
+// 비밀번호 바꾸기 (로그인한 기기에서). 비밀번호는 서버에 잠긴 형태로만 저장돼 원문을 꺼내 볼 수 없다
+$('#pwbtn').onclick = async () => {
+  const d = $('#pwdlg');
+  $('#pw-new').value = $('#pw-new2').value = $('#pw-err').textContent = '';
+  const { data } = await db.auth.getSession();
+  $('#pw-who').textContent = data.session?.user?.email ? '아이디: ' + data.session.user.email : '';
+  d.showModal();
+  $('#pw-new').focus();
+};
+$('#pw-cancel').onclick = () => $('#pwdlg').close();
+$('#pwdlg form').onsubmit = async e => {
+  e.preventDefault();
+  const a = $('#pw-new').value, b = $('#pw-new2').value, ok = $('#pw-ok');
+  if (a.length < 6) return $('#pw-err').textContent = '6자 이상으로 해 주세요.';
+  if (a !== b) return $('#pw-err').textContent = '두 칸이 서로 달라요. 같게 넣어 주세요.';
+  if (!navigator.onLine) return $('#pw-err').textContent = '인터넷이 연결됐을 때 바꿀 수 있어요.';
+  ok.disabled = true; ok.textContent = '바꾸는 중…';
+  const { error } = await db.auth.updateUser({ password: a });
+  ok.disabled = false; ok.textContent = '바꾸기';
+  if (error) return $('#pw-err').textContent = /same|different from the old/i.test(error.message) ? '지금 비밀번호와 같아요. 다른 비밀번호로 해 주세요.' : korErr(error);
+  $('#pwdlg').close();
+  toast('비밀번호를 바꿨어요. 다른 기기도 새 비밀번호로 로그인하세요.');
+};
 $('#logout').onclick = async () => {
   if (Object.keys(queue).length && !confirm('아직 서버에 안 올라간 변경이 있어요. 로그아웃하면 사라집니다. 계속할까요?')) return;
   await db.auth.signOut();
