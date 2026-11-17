@@ -487,7 +487,8 @@ async function flush() {
       if (op.table === 'notes' && !op.del && op.base) await keepConflict(op);
       const { error } = op.del ? await t.delete().eq('id', op.row.id) : await t.upsert(op.row);
       if (error) throw error;
-      if (queue[k] === op) delete queue[k]; // 그새 또 고쳤으면 새 버전은 남겨둔다
+      // 그새 또 고쳤으면 새 버전은 남겨둔다 — 그 버전의 기준은 방금 올린 내 판 (옛 기준이면 내 글을 충돌로 착각함, 11/17 충돌본 수십 개 사건)
+      if (queue[k] === op) delete queue[k]; else if (queue[k]) queue[k].base = op.row.updated_at;
       store(QKEY, queue);
     }
     netOk(true);
@@ -2153,7 +2154,7 @@ addEventListener('online', pull);
 document.addEventListener('visibilitychange', () => document.visibilityState === 'visible' && db && pull());
 
 // ---------- 로그인 ----------
-const VERSION = '11.10-a';
+const VERSION = '11.17-a';
 // 메인 창(폴더·목록이 있는 창)을 열거나, 이미 열려 있으면 앞으로
 function openMain() { window.open(location.pathname, 'yun-main'); }
 function start() {
