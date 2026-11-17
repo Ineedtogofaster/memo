@@ -506,7 +506,7 @@ async function flush() {
 async function keepConflict(op) {
   const { data, error } = await db.from('notes').select('*').eq('id', op.row.id).maybeSingle();
   if (error) throw error;
-  if (!data || data.updated_at === op.base || Date.parse(data.updated_at) <= Date.parse(op.base) || data.html === op.row.html) return;
+  if (!data || Date.parse(data.updated_at) === Date.parse(op.base) || data.html === op.row.html) return; // 서버 판이 내가 알던 판 그대로면 충돌 아님
   const t = now();
   const c = { ...data, id: crypto.randomUUID(), html: '<div>⚠️ 충돌본 — 다른 기기에서 같은 메모를 고친 판이에요</div>' + data.html, pinned: false, created_at: t, updated_at: t };
   const r = await db.from('notes').insert(c);
@@ -2154,7 +2154,7 @@ addEventListener('online', pull);
 document.addEventListener('visibilitychange', () => document.visibilityState === 'visible' && db && pull());
 
 // ---------- 로그인 ----------
-const VERSION = '11.17-a';
+const VERSION = '11.17-b';
 // 메인 창(폴더·목록이 있는 창)을 열거나, 이미 열려 있으면 앞으로
 function openMain() { window.open(location.pathname, 'yun-main'); }
 function start() {
