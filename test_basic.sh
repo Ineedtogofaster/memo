@@ -1,7 +1,7 @@
 #!/bin/bash
 # 실행 전: 로컬 Supabase(supabase start) + 이 폴더를 config.js만 로컬 주소로 바꿔 http://127.0.0.1:8789 에 띄우기
 # 기본 편집 기능 전체 점검: 로컬 Supabase(실제 저장·실시간 동기화) + 실제 키 입력, 맥 화면(A)과 폰 화면(B)
-A="agent-browser --session mac"; B="agent-browser --session phone"
+A="env -u AGENT_BROWSER_CDP agent-browser --session bm"; B="env -u AGENT_BROWSER_CDP agent-browser --session bp"
 U=http://127.0.0.1:8789/
 EM="q$(date +%s)@memo.test"; PW="test-$(date +%s)"   # 로컬 테스트 전용 계정
 pass=0; fail=0

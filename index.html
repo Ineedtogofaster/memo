@@ -3,8 +3,10 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#f5f5f7" media="(prefers-color-scheme: light)">
-<meta name="theme-color" content="#1e1e1e" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#f5f5f7">
+<script>/* 화면 모드: 기본 밝게, 보기 메뉴에서 어둡게·폰 설정 따라 — 그리기 전에 정해서 깜빡임 없게 */
+function applyTheme(t){var d=t==='dark'||t==='auto'&&matchMedia('(prefers-color-scheme:dark)').matches;document.documentElement.classList.toggle('dark',d);var m=document.querySelector('meta[name=theme-color]');if(m)m.content=d?'#1e1e1e':'#f5f5f7';try{window.AndroidApp&&AndroidApp.setDark(d)}catch(e){}}
+try{applyTheme(JSON.parse(localStorage.getItem('prefs')||'{}').theme||'light')}catch(e){applyTheme('light')}</script>
 <meta name="apple-mobile-web-app-capable" content="yes">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon-192.png">
@@ -12,7 +14,7 @@
 <title>메모</title>
 <style>
 :root{--bg:#fff;--side:#f5f5f7;--line:#e5e5ea;--text:#1d1d1f;--sub:#8e8e93;--icon:#5e5e63;--acc:#e3a600;--sel:#fde98f;--rowsel:#e2e2e7;--hover:#ececf0;--field:#ececf0;--pop:#fff;--capbg:#fff;--capline:#0000001c;--sw:260px;--lw:300px}
-@media (prefers-color-scheme:dark){:root{--bg:#1e1e1e;--side:#252527;--line:#38383a;--text:#f2f2f7;--sub:#8e8e93;--icon:#b0b0b5;--acc:#f5c400;--sel:#6e5a14;--rowsel:#3a3a3c;--hover:#333335;--field:#333335;--pop:#2c2c2e;--capbg:#2c2c2e;--capline:#ffffff1f}}
+.dark:root{--bg:#1e1e1e;--side:#252527;--line:#38383a;--text:#f2f2f7;--sub:#8e8e93;--icon:#b0b0b5;--acc:#f5c400;--sel:#6e5a14;--rowsel:#3a3a3c;--hover:#333335;--field:#333335;--pop:#2c2c2e;--capbg:#2c2c2e;--capline:#ffffff1f}
 *{box-sizing:border-box}
 html,body{margin:0;height:100%;background:var(--bg);color:var(--text);font:14px/1.45 -apple-system,BlinkMacSystemFont,"SF Pro Text","Apple SD Gothic Neo","Noto Sans KR",sans-serif;-webkit-font-smoothing:antialiased}
 button{font:inherit;color:inherit;background:none;border:0;cursor:default;padding:0}
@@ -35,7 +37,8 @@ svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.6;stroke
 }
 .ib{min-width:34px;height:30px;display:inline-grid;place-items:center;border-radius:7px;color:var(--icon);padding:0 6px}
 .ib:hover{background:var(--hover)}
-.ib:disabled{opacity:.35;background:none}
+.ib:disabled{opacity:.35;background:none;cursor:default}
+:is(button,.ib,.f,.it,.chip,input,select,a):focus-visible{outline:2px solid var(--acc);outline-offset:2px}
 .ib.on{color:var(--acc)}
 .sp{flex:1}
 .cap{display:inline-flex;align-items:center;gap:2px;height:38px;padding:0 4px;border-radius:999px;background:var(--capbg);box-shadow:0 0 0 .5px var(--capline),0 2px 8px #0000000f}
@@ -129,13 +132,14 @@ mark{background:#ffd60a80;color:inherit;border-radius:2px}
 #ed ul.cl{list-style:none;padding-left:2px}
 #ed ul.cl li{position:relative;padding-left:30px;margin:5px 0;min-height:22px}
 #ed ul.cl li::before{content:"";position:absolute;left:0;top:2px;width:19px;height:19px;border:1.5px solid #b4b4b9;border-radius:50%;box-sizing:border-box}
-#ed ul.cl li.done::before{background:var(--acc);border-color:var(--acc);content:"✓";color:#fff;font-size:12px;font-weight:700;text-align:center;line-height:17px}
+#ed ul.cl li.done::before{background:var(--acc);border-color:var(--acc);content:"✓";color:#000;font-size:12px;font-weight:700;text-align:center;line-height:17px}
 #ed ul.dash{list-style:none;padding-left:18px}
 #ed ul.dash>li::before{content:"–";position:absolute;margin-left:-16px}
 #ed table{border-collapse:collapse;margin:8px 0}
 #ed td{border:1px solid var(--line);padding:6px 10px;min-width:70px;vertical-align:top}
-:root{--link:#0a66d8}
-@media (prefers-color-scheme:dark){:root{--link:#4aa3ff}}
+:root{--link:#0a66d8;--fieldline:#c7c7cc}
+.dark:root{--fieldline:#48484a}
+.dark:root{--link:#4aa3ff}
 #ed a{color:var(--link);text-decoration:underline;text-underline-offset:2px;cursor:pointer}
 #ed ul ul,#ed ol ol,#ed ul ol,#ed ol ul{margin:0}
 #ed ul.cl ul.cl{padding-left:26px}
@@ -158,7 +162,7 @@ body.nocount .f .n{visibility:hidden}
 #ed .tag{color:var(--acc);font-weight:600;background:color-mix(in srgb,var(--acc) 14%,transparent);border-radius:5px;padding:0 3px}
 .tags{display:flex;flex-wrap:wrap;gap:6px;padding:4px 14px 12px}
 .chip{border:1px solid var(--line);border-radius:999px;padding:3px 10px;font-size:13px;color:var(--text);background:var(--bg)}
-.chip.on{background:var(--acc);color:#fff;border-color:var(--acc)}
+.chip.on{background:var(--acc);color:#000;border-color:var(--acc)}
 /* 첨부 */
 #ed .att{margin:6px 0}
 #ed img[data-att]{display:block;max-width:100%;max-height:520px;border-radius:10px;cursor:zoom-in;background:var(--field);min-width:80px;min-height:60px}
@@ -182,7 +186,7 @@ body.nocount .f .n{visibility:hidden}
 #smartdlg form,.dlg form{display:flex;flex-direction:column;gap:12px;padding:20px}
 #smartdlg h3,.dlg h3{margin:0;font-size:17px}
 #smartdlg label,.dlg label{font-size:13px;color:var(--sub);display:flex;flex-direction:column;gap:5px}
-#smartdlg input[type=text],.dlg input,#smartdlg select{font:inherit;color:var(--text);background:var(--field);border:0;border-radius:8px;padding:8px 10px}
+#smartdlg input[type=text],.dlg input,#smartdlg select{font:inherit;color:var(--text);background:var(--field);border:1px solid var(--fieldline);border-radius:8px;padding:8px 10px}
 #smartdlg .row{display:flex;gap:8px;align-items:center;color:var(--text);font-size:14px;flex-direction:row}
 #smartdlg .btns,.dlg .btns{display:flex;justify-content:flex-end;gap:8px;margin-top:4px}
 #smartdlg .btns button{padding:8px 16px;border-radius:8px;background:var(--field)}
@@ -233,7 +237,7 @@ body[data-pane=editor] #toast{bottom:calc(66px + env(safe-area-inset-bottom))}
 
 /* 로그인 */
 #auth{max-width:320px;margin:15vh auto;padding:0 16px;display:flex;flex-direction:column;gap:10px;text-align:center}
-#auth input{padding:11px;border-radius:9px;border:1px solid var(--line);background:var(--bg);color:var(--text);font:inherit}
+#auth input{padding:11px;border-radius:9px;border:1px solid var(--fieldline);background:var(--bg);color:var(--text);font:inherit}
 #auth .main{background:var(--acc);color:#000;font-weight:600;padding:11px;border-radius:9px}
 #auth button{padding:8px;cursor:pointer}
 #authmsg{color:var(--sub);font-size:13px;min-height:1em}
@@ -342,8 +346,8 @@ body[data-pane=editor] #toast{bottom:calc(66px + env(safe-area-inset-bottom))}
   <section class="pane" id="folders">
     <div class="bar">
       <span class="sp"></span>
-      <button class="ib" id="newf" title="새 폴더 (⇧⌘N)"><svg><use href="#i-newf"/></svg></button>
-      <button class="ib" id="sbtoggle" title="사이드바 가리기 (⌃⌘S)"><svg><use href="#i-side"/></svg></button>
+      <button class="ib" id="newf" title="새 폴더 (⇧⌘N)"><svg aria-hidden="true"><use href="#i-newf"/></svg></button>
+      <button class="ib" id="sbtoggle" title="사이드바 가리기 (⌃⌘S)"><svg aria-hidden="true"><use href="#i-side"/></svg></button>
     </div>
     <h1 class="big">폴더</h1>
     <div class="scroll" id="flist" tabindex="0"></div>
@@ -353,33 +357,33 @@ body[data-pane=editor] #toast{bottom:calc(66px + env(safe-area-inset-bottom))}
 
   <section class="pane" id="list">
     <div class="bar">
-      <button class="ib back" data-go="folders"><svg><use href="#i-back"/></svg><span>폴더</span></button>
-      <button class="ib" id="sbshow" title="사이드바 보기" hidden><svg><use href="#i-side"/></svg></button>
+      <button class="ib back" data-go="folders"><svg aria-hidden="true"><use href="#i-back"/></svg><span>폴더</span></button>
+      <button class="ib" id="sbshow" title="사이드바 보기" hidden><svg aria-hidden="true"><use href="#i-side"/></svg></button>
       <div class="lhead"><b id="ltitle"></b><small id="lcount"></small></div>
-      <span class="cap"><button class="ib" id="viewmenu" title="보기 옵션"><svg><use href="#i-more"/></svg></button></span>
-      <button class="ib narrow newn" title="새 메모"><svg><use href="#i-new"/></svg></button>
+      <span class="cap"><button class="ib" id="viewmenu" title="보기 옵션"><svg aria-hidden="true"><use href="#i-more"/></svg></button></span>
+      <button class="ib narrow newn" title="새 메모"><svg aria-hidden="true"><use href="#i-new"/></svg></button>
     </div>
-    <label class="search" id="lsearch"><svg><use href="#i-search"/></svg><input class="q" type="search" placeholder="검색"></label>
+    <label class="search" id="lsearch"><svg aria-hidden="true"><use href="#i-search"/></svg><input class="q" type="search" placeholder="검색"></label>
     <div class="scroll" id="nlist" tabindex="0"></div>
     <div class="rs" data-v="--lw"></div>
   </section>
 
   <section class="pane" id="editor">
     <div class="bar" id="edbar">
-      <button class="ib back" data-go="list"><svg><use href="#i-back"/></svg><span id="backname"></span></button>
-      <button class="ib" id="listtoggle" title="메모만 보기 (⌃⌘L)"><svg><use href="#i-side"/></svg></button>
-      <span class="cap only-single"><button class="ib" id="tomain" title="모든 메모 (⌘0)"><svg><use href="#i-side"/></svg></button></span>
+      <button class="ib back" data-go="list"><svg aria-hidden="true"><use href="#i-back"/></svg><span id="backname"></span></button>
+      <button class="ib" id="listtoggle" title="메모만 보기 (⌃⌘L)"><svg aria-hidden="true"><use href="#i-side"/></svg></button>
+      <span class="cap only-single"><button class="ib" id="tomain" title="모든 메모 (⌘0)"><svg aria-hidden="true"><use href="#i-side"/></svg></button></span>
       <div id="tools">
-        <span class="cap"><button class="ib newn" title="새 메모 (⌘N)"><svg><use href="#i-new"/></svg></button></span>
+        <span class="cap"><button class="ib newn" title="새 메모 (⌘N)"><svg aria-hidden="true"><use href="#i-new"/></svg></button></span>
         <span class="cap"><button class="ib nb" id="fmt" title="서식"><b style="font-size:15px">가<small>가</small></b></button>
-        <button class="ib nb" id="check" title="체크리스트 (⇧⌘L)"><svg><use href="#i-check"/></svg></button>
-        <button class="ib nb" id="table" title="표 (⌥⌘T)"><svg><use href="#i-table"/></svg></button>
-        <button class="ib nb" id="attach" title="사진·파일 첨부 (⇧⌘A)"><svg><use href="#i-clip"/></svg></button></span>
+        <button class="ib nb" id="check" title="체크리스트 (⇧⌘L)"><svg aria-hidden="true"><use href="#i-check"/></svg></button>
+        <button class="ib nb" id="table" title="표 (⌥⌘T)"><svg aria-hidden="true"><use href="#i-table"/></svg></button>
+        <button class="ib nb" id="attach" title="사진·파일 첨부 (⇧⌘A)"><svg aria-hidden="true"><use href="#i-clip"/></svg></button></span>
         <input type="file" id="filepick" multiple hidden>
       </div>
       <span class="sp"></span>
-      <span class="cap"><button class="ib nb" id="more" title="메모 메뉴"><svg><use href="#i-more"/></svg></button></span>
-      <label class="search cap" id="edsearch"><svg><use href="#i-search"/></svg><input class="q" type="search" placeholder="검색"></label>
+      <span class="cap"><button class="ib nb" id="more" title="메모 메뉴"><svg aria-hidden="true"><use href="#i-more"/></svg></button></span>
+      <label class="search cap" id="edsearch"><svg aria-hidden="true"><use href="#i-search"/></svg><input class="q" type="search" placeholder="검색"></label>
     </div>
     <div id="findbar" hidden>
       <input id="fq" placeholder="메모에서 찾기" autocomplete="off"><span id="fcount"></span>
@@ -393,7 +397,7 @@ body[data-pane=editor] #toast{bottom:calc(66px + env(safe-area-inset-bottom))}
   </section>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js" integrity="sha384-GFr3yTh5lJznCbZfpTtXnwboFsxqtTQoeTZCRHhE0579KrRmlCzen5AA8ohaB5ug" crossorigin="anonymous"></script>
 <script src="config.js"></script>
 <script>
 const $ = s => document.querySelector(s);
@@ -435,7 +439,7 @@ const db = cfg.url && supabase.createClient(cfg.url, cfg.key);
 
 let S = { folders: load('folders', []), notes: load('notes', []), view: load('view', ALL), open: null, q: '' };
 // 보기 설정 (기기마다): 정렬 기준·날짜 그룹·순서·패널 너비
-let P = Object.assign({ sort: 'updated', group: true, rev: false, pinOpen: true, nosb: false, nolist: false, sink: true, counts: true, startStyle: 'H1', zoom: 1, lightNote: false, sw: 260, lw: 300 }, load('prefs', {}));
+let P = Object.assign({ sort: 'updated', group: true, rev: false, pinOpen: true, nosb: false, nolist: false, sink: true, counts: true, startStyle: 'H1', zoom: 1, lightNote: false, theme: 'light', sw: 260, lw: 300 }, load('prefs', {}));
 const savePrefs = () => store('prefs', P);
 // 서버에 아직 못 올린 변경: "table:id" → {table,row,del}. 저장 성공 전엔 절대 안 지운다
 const SINGLE = new URLSearchParams(location.search).get('note'); // 작은 창으로 연 메모
@@ -470,7 +474,8 @@ const status = t => $('#status').textContent = t;
 function put(table, row, del = false, base) {
   const k = table + ':' + row.id;
   queue[k] = { table, row: del ? { id: row.id } : { ...row }, del, base: queue[k] ? queue[k].base : base };
-  store(QKEY, queue); // 저장 대기열은 바로 (글 잃어버리지 않게)
+  // 저장 대기열은 바로 (글 잃어버리지 않게). 저장공간이 차면 오프라인 사본을 비우고 다시 — 그래도 안 되면 알림
+  if (!store(QKEY, queue)) { localStorage.removeItem('notes'); store(QKEY, queue) || toast('폰 저장공간이 가득 찼어요. 인터넷에 연결한 뒤 앱을 닫아 주세요'); }
   clearTimeout(put.c); // 오프라인 사본(메모 전체)은 1초 모아서 한 번에 — 매 글자마다 1MB 쓰면 느림
   put.c = setTimeout(cache, 1000);
   clearTimeout(put.t);
@@ -481,17 +486,27 @@ let flushing = false;
 async function flush() {
   if (flushing || !db) return;
   flushing = true;
+  let refused = null;
   try {
     for (const [k, op] of Object.entries(queue)) {
-      const t = db.from(op.table);
-      if (op.table === 'notes' && !op.del && op.base) await keepConflict(op);
-      const { error } = op.del ? await t.delete().eq('id', op.row.id) : await t.upsert(op.row);
-      if (error) throw error;
+      try {
+        const t = db.from(op.table);
+        if (op.table === 'notes' && !op.del && op.base) await keepConflict(op);
+        const { error } = op.del ? await t.delete().eq('id', op.row.id) : await t.upsert(op.row);
+        if (error) throw error;
+      } catch (e) {
+        if (isNetErr(e)) throw e;
+        refused = e; continue; // 서버가 거절한 것 하나 때문에 나머지까지 멈추지 않게 (거절된 건 대기열에 남겨 다시 시도)
+      }
       // 그새 또 고쳤으면 새 버전은 남겨둔다 — 그 버전의 기준은 방금 올린 내 판 (옛 기준이면 내 글을 충돌로 착각함, 11/17 충돌본 수십 개 사건)
       if (queue[k] === op) delete queue[k]; else if (queue[k]) queue[k].base = op.row.updated_at;
       store(QKEY, queue);
     }
     netOk(true);
+    const msg = refused && (/jwt|401|auth|token/i.test(refused.message + refused.code) ? '로그인이 만료돼 저장을 못 했어요. 로그아웃하지 말고 새로고침한 뒤, 계속 안 되면 다시 로그인해 주세요' : '저장 실패: ' + korErr(refused));
+    if (msg && msg !== flush.last) toast(msg);
+    flush.last = msg;
+    if (refused) console.warn(refused);
   } catch (e) {
     console.warn(e);
     netOk(false);
@@ -535,6 +550,9 @@ async function selectAll(table) {
   }
 }
 
+// 인터넷 문제(다시 시도하면 됨)인지, 서버가 거절한 것인지
+const isNetErr = e => !navigator.onLine || /fetch|network|load failed|timeout/i.test(String(e?.message || e)) || e?.status === 0;
+
 function merge(table, rows) {
   const m = new Map(rows.map(r => [r.id, r]));
   for (const op of Object.values(queue))
@@ -545,7 +563,9 @@ function merge(table, rows) {
 async function pull() {
   try {
     const [n, f] = await Promise.all([selectAll('notes'), selectAll('folders')]);
+    const open = !queue['notes:' + S.open] && note(S.open); // 막 만든 새 메모(첫 글자 전이라 서버에 없음)는 지우지 않게
     S.notes = merge('notes', n);
+    if (open && !note(S.open)) S.notes.push(open);
     S.folders = merge('folders', f);
   } catch (e) {
     netOk(false);
@@ -600,7 +620,7 @@ function when(iso) {
 const longDate = iso => new Date(iso).toLocaleString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric', hour: 'numeric', minute: '2-digit' });
 
 // ---------- 화면 ----------
-const svg = id => `<svg><use href="#i-${id}"/></svg>`;
+const svg = id => `<svg aria-hidden="true"><use href="#i-${id}"/></svg>`;
 // 마우스에서만 끌어서 놓기 (폰에선 길게 누르면 메뉴가 떠야 하므로)
 const DRAG = matchMedia('(pointer:fine)').matches ? 'draggable="true"' : '';
 const SWIPE = matchMedia('(pointer:coarse)').matches;
@@ -682,6 +702,7 @@ function render() {
   $('#listtoggle').title = P.nolist ? '폴더·목록 보기 (⌃⌘L)' : '메모만 보기 (⌃⌘L)';
   document.body.classList.toggle('nocount', !P.counts);
   document.body.classList.toggle('lightnote', P.lightNote);
+  applyTheme(P.theme);
   document.body.style.setProperty('--zoom', P.zoom);
   $('#sbshow').hidden = !P.nosb;
   renderFolders(live);
@@ -909,6 +930,8 @@ function viewMenu(x, y) {
     '-',
     { label: '체크한 항목 자동으로 분류', check: P.sink, act: set('sink', !P.sink) },
     { label: '메모 수 보기', check: P.counts, act: set('counts', !P.counts) },
+    { label: '화면 모드…', act: () => menu([{ title: '화면 모드' },
+        ...[['light', '밝게'], ['dark', '어둡게'], ['auto', '폰·컴퓨터 설정 따라']].map(([v, l]) => ({ label: l, check: P.theme === v, act: set('theme', v) }))], x, y) },
     { label: '라이트 모드 배경으로 메모 보기', check: P.lightNote, act: set('lightNote', !P.lightNote) },
     '-',
     { label: '새로운 메모 시작 스타일…', act: () => menu([{ title: '새로운 메모 시작 스타일' },
@@ -1641,7 +1664,7 @@ async function addFiles(files) {
     if (thumb) localUrls.set(tpath, URL.createObjectURL(thumb));
     document.execCommand('insertHTML', false, isImg
       ? `<div class="att"><img data-att="${path}"${tpath ? ` data-thumb="${tpath}"` : ''} alt=""></div><div><br></div>`
-      : `<div class="att"><a class="file" contenteditable="false" data-att="${path}" data-name="${esc(file.name)}">📎 ${esc(file.name)} · ${fmtSize(file.size)}</a></div><div><br></div>`);
+      : `<div class="att"><a class="file" contenteditable="false" data-att="${path}" data-name="${esc(file.name)}"><svg aria-hidden="true" viewBox="0 0 24 24" style="width:16px;height:16px"><path d="M20 11.5l-8 8a5 5 0 0 1-7-7l8.5-8.5a3.3 3.3 0 0 1 4.7 4.7L9.7 17.2a1.7 1.7 0 0 1-2.4-2.4L15 7"/></svg>${esc(file.name)} · ${fmtSize(file.size)}</a></div><div><br></div>`);
     hydrate(ed);
     saveEditor();
     status('첨부 올리는 중…');
@@ -2154,7 +2177,8 @@ addEventListener('online', pull);
 document.addEventListener('visibilitychange', () => document.visibilityState === 'visible' && db && pull());
 
 // ---------- 로그인 ----------
-const VERSION = '11.17-b';
+const VERSION = '11.21-a';
+matchMedia('(prefers-color-scheme:dark)').addEventListener('change', () => applyTheme(P.theme));
 // 메인 창(폴더·목록이 있는 창)을 열거나, 이미 열려 있으면 앞으로
 function openMain() { window.open(location.pathname, 'yun-main'); }
 function start() {
@@ -2221,6 +2245,7 @@ $('#logout').onclick = async () => {
   if (Object.keys(queue).length && !confirm('아직 서버에 안 올라간 변경이 있어요. 로그아웃하면 사라집니다. 계속할까요?')) return;
   await db.auth.signOut();
   localStorage.clear();
+  if (window.caches) await Promise.all((await caches.keys()).map(k => caches.delete(k))); // 첨부 사진 사본도 지움 (같은 기기를 다른 사람이 써도 안 남게)
   location.reload();
 };
 
