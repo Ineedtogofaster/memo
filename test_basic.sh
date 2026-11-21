@@ -12,7 +12,7 @@ caretEnd() { $1 eval "(()=>{const E=document.querySelector('#ed');const w=docume
 
 $A open $U >/dev/null; $B open $U >/dev/null
 $A set viewport 1400 900 >/dev/null; $B set viewport 412 900 >/dev/null
-$A fill '#em' "$EM" >/dev/null; $A fill '#pw' "$PW" >/dev/null; $A click '#signup' >/dev/null; $A wait '#app:not([hidden])' >/dev/null
+$A fill '#em' "$EM" >/dev/null; $A fill '#pw' "$PW" >/dev/null; $A eval 'auth(true)' >/dev/null; $A wait '#app:not([hidden])' >/dev/null
 $B fill '#em' "$EM" >/dev/null; $B fill '#pw' "$PW" >/dev/null; $B click 'button.main' >/dev/null; $B wait '#app:not([hidden])' >/dev/null
 sleep 1
 

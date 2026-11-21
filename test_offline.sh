@@ -6,7 +6,7 @@ pass=0; fail=0
 ev(){ $1 eval "$2" 2>&1 | sed 's/^"//; s/"$//'; }
 ok(){ if [ "$2" = true ]; then echo "✅ $1"; pass=$((pass+1)); else echo "❌ $1 → $3"; fail=$((fail+1)); fi; }
 A open $U >/dev/null; B open $U >/dev/null; A set viewport 1400 900 >/dev/null; B set viewport 412 900 >/dev/null
-A fill '#em' $EM >/dev/null; A fill '#pw' $PW >/dev/null; A click '#signup' >/dev/null; A wait '#app:not([hidden])' >/dev/null
+A fill '#em' $EM >/dev/null; A fill '#pw' $PW >/dev/null; A eval 'auth(true)' >/dev/null; A wait '#app:not([hidden])' >/dev/null
 B fill '#em' $EM >/dev/null; B fill '#pw' $PW >/dev/null; B click 'button.main' >/dev/null; B wait '#app:not([hidden])' >/dev/null
 echo "── 저장 중에 또 고치기 (11/17 가짜 충돌본 사건)"
 R=$(ev A "(async()=>{const t=now();const n={id:crypto.randomUUID(),folder_id:null,html:'<h1>a</h1>',pinned:false,deleted_at:null,updated_at:t,created_at:t};S.notes.push(n);save(n,{html:'<h1>ab</h1>'});await flush();for(let i=0;i<5;i++){await new Promise(r=>setTimeout(r,5));save(n,{html:'<h1>ab'+i+'</h1>'});const p=flush();await new Promise(r=>setTimeout(r,1));save(n,{html:'<h1>abc'+i+'</h1>'});await p;await flush();}save(n,{deleted_at:now()});await flush();return S.notes.filter(x=>x.html.includes('충돌본')).length})()")

@@ -292,7 +292,6 @@ body[data-pane=editor] #toast{bottom:calc(66px + env(safe-area-inset-bottom))}
   <input type="email" id="em" placeholder="이메일" autocomplete="username" required>
   <input type="password" id="pw" placeholder="비밀번호 (6자 이상)" autocomplete="current-password" minlength="6" required>
   <button class="main">로그인</button>
-  <button type="button" id="signup">새 계정 만들기</button>
   <p id="authmsg"></p>
 </form>
 
@@ -2177,7 +2176,7 @@ addEventListener('online', pull);
 document.addEventListener('visibilitychange', () => document.visibilityState === 'visible' && db && pull());
 
 // ---------- 로그인 ----------
-const VERSION = '11.21-a';
+const VERSION = '11.21-b';
 matchMedia('(prefers-color-scheme:dark)').addEventListener('change', () => applyTheme(P.theme));
 // 메인 창(폴더·목록이 있는 창)을 열거나, 이미 열려 있으면 앞으로
 function openMain() { window.open(location.pathname, 'yun-main'); }
@@ -2217,7 +2216,6 @@ async function auth(signup) {
   start();
 }
 $('#auth').onsubmit = e => { e.preventDefault(); auth(false); };
-$('#signup').onclick = () => $('#auth').reportValidity() && auth(true);
 // 비밀번호 바꾸기 (로그인한 기기에서). 비밀번호는 서버에 잠긴 형태로만 저장돼 원문을 꺼내 볼 수 없다
 $('#pwbtn').onclick = async () => {
   const d = $('#pwdlg');
